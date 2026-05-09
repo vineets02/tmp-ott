@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+client/node_modules/
+
+# Environment Variables
+.env
+client/.env
+
+# Local Uploads (Media)
+upload/
+public/upload/
+
+# Build Files
+build/
+client/build/
+
+# Debugging & Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+scratch/
+
+# OS Specific
+.DS_Store
+Thumbs.db
