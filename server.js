@@ -245,3 +245,16 @@ server.listen(PORT, () => {
   console.log(`server Running on ${PORT}`.bgYellow.white)
 })
 
+// Self-pinging to prevent Render sleep (Method 3)
+const https = require("https");
+const RENDER_URL = process.env.RENDER_EXTERNAL_URL || "https://tmp-ott.onrender.com";
+setInterval(() => {
+  https.get(RENDER_URL, (res) => {
+    if (res.statusCode === 200) {
+      console.log("Self-ping successful: Service kept awake");
+    }
+  }).on("error", (err) => {
+    console.log("Self-ping failed:", err.message);
+  });
+}, 600000); // 10 minutes
+
