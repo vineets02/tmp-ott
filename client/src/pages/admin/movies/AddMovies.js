@@ -81,12 +81,15 @@ export default function AddMovies() {
 
   const uploadToR2 = async (file, onProgress) => {
     try {
+      // 1. Sanitize filename and prepare contentType
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.]/g, '_');
+      const contentType = file.type || "application/octet-stream";
       const titleSlug = formData.title ? formData.title.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase() : 'uncategorized';
 
-      // 1. Get Presigned URL
+      // 2. Get Presigned URL
       const { data } = await axios.post(`${config.API_BASE_URL}/api/v1/movie/get-upload-url`, {
-        fileName: file.name,
-        contentType: file.type || "application/octet-stream",
+        fileName: cleanFileName,
+        contentType: contentType,
         movieName: titleSlug
       });
 
@@ -94,11 +97,13 @@ export default function AddMovies() {
 
       const { uploadUrl, fileKey } = data;
 
-      // 2. Upload directly to R2 using XMLHttpRequest to avoid Axios global headers
+      // 3. Upload directly to R2
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open("PUT", uploadUrl, true);
-        xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+        
+        // Ensure this matches the contentType sent to the backend EXACTLY
+        xhr.setRequestHeader("Content-Type", contentType);
         
         xhr.upload.onprogress = (event) => {
           if (event.lengthComputable && onProgress) {
@@ -110,8 +115,8 @@ export default function AddMovies() {
           if (xhr.status >= 200 && xhr.status < 300) {
             resolve(fileKey);
           } else {
-            
-            reject(new Error(`Upload failed with status ${xhr.status}. Cloudflare says: ${xhr.responseText}`));
+            console.error("R2 Upload Error:", xhr.responseText);
+            reject(new Error(`Upload failed with status ${xhr.status}.`));
           }
         };
         
