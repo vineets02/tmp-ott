@@ -15,8 +15,24 @@ import {
   BiCreditCard
 } from "react-icons/bi";
 
+const getAvatarUrl = (avatar, name = "") => {
+  if (!avatar || avatar === "/netflix_icon.jpg" || avatar.includes("netflix_icon.jpg") || avatar.includes("wiki") || avatar.includes("pinimg")) {
+    const colors = ["#E50914", "#E87511", "#F5A623", "#46D369", "#2B90EF", "#7B1FA2", "#E91E63", "#00BCD4"];
+    let hash = 0;
+    const cleanName = name || "User";
+    for (let i = 0; i < cleanName.length; i++) {
+      hash = cleanName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const color = colors[Math.abs(hash) % colors.length];
+    const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" rx="16" fill="${color}"/><circle cx="33" cy="40" r="7" fill="white"/><circle cx="67" cy="40" r="7" fill="white"/><path d="M30 62 Q50 78 70 62" stroke="white" stroke-width="7" stroke-linecap="round" fill="none"/></svg>`;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
+  }
+  return avatar;
+};
+
 function Dashboard() {
   const auth = useSelector((state) => state.auth);
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [settings, setSettings] = useState({ paywallEnabled: true });
@@ -64,7 +80,7 @@ function Dashboard() {
               <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8 text-center group">
                 <div className="relative inline-block mb-6">
                   <img 
-                    src={auth.activeProfile?.avatar || "/netflix_icon.jpg"} 
+                    src={getAvatarUrl(auth.activeProfile?.avatar, auth.activeProfile?.name || auth.user?.name)} 
                     className="h-32 w-32 rounded-3xl object-cover border-4 border-zinc-800 group-hover:border-amber-500 transition-all duration-500 shadow-2xl"
                     alt="Avatar" 
                   />

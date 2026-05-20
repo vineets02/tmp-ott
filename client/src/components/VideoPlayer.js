@@ -63,7 +63,99 @@ const customStyles = `
     content: "\\f110"; /* Gear icon */
     font-family: VideoJS;
   }
+
+  /* Landscape hint animation */
+  @keyframes hint-slide-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  }
+  .landscape-hint {
+    animation: hint-slide-in 0.4s ease forwards;
+  }
 `;
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+/** Returns true only on touch-capable small screens (phones/tablets) */
+const isMobileDevice = () =>
+  typeof window !== 'undefined' &&
+  ('ontouchstart' in window || navigator.maxTouchPoints > 0) &&
+  window.screen.width < 1200;
+
+/** Lock screen to landscape using the modern Orientation API */
+const lockLandscape = async () => {
+  try {
+    if (window.screen.orientation && window.screen.orientation.lock) {
+      await window.screen.orientation.lock('landscape');
+    }
+  } catch (_) {
+    // Silently ignore — some browsers block this unless triggered by a user gesture
+  }
+};
+
+/** Unlock screen orientation back to natural */
+const unlockOrientation = () => {
+  try {
+    if (window.screen.orientation && window.screen.orientation.unlock) {
+      window.screen.orientation.unlock();
+    }
+  } catch (_) {}
+};
+
+/** Show a brief "Rotate for best experience" toast below the player */
+const showRotateHint = (containerEl) => {
+  if (!containerEl || !isMobileDevice()) return;
+
+  // Only show in portrait
+  const orientationType = window.screen.orientation?.type || '';
+  if (orientationType.includes('landscape')) return;
+
+  const existing = containerEl.querySelector('.landscape-hint');
+  if (existing) return;
+
+  const hint = document.createElement('div');
+  hint.className = 'landscape-hint';
+  hint.style.cssText = `
+    position: absolute;
+    bottom: 72px;
+    left: 50%;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.85);
+    border: 1px solid rgba(245,158,11,0.4);
+    color: #f59e0b;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  `;
+  hint.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2"/>
+      <path d="M16 2l4 4-4 4"/>
+      <path d="M20 6H8a4 4 0 00-4 4"/>
+    </svg>
+    Rotate for best experience
+  `;
+
+  containerEl.style.position = 'relative';
+  containerEl.appendChild(hint);
+
+  // Auto remove after 4 seconds
+  setTimeout(() => {
+    if (hint.parentNode) hint.remove();
+  }, 4000);
+};
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export const VideoPlayer = (props) => {
   const videoRef = useRef(null);
@@ -104,6 +196,82 @@ export const VideoPlayer = (props) => {
         }
         onReady && onReady(player);
       });
+
+      // ── Auto Landscape on Mobile ──────────────────────────────────────────
+      // On the very first Play tap on a mobile/tablet:
+      //   1. Request fullscreen (this is a user-gesture so the browser allows it)
+      //   2. Lock orientation to landscape inside the fullscreen handler
+      // This gives a true "auto-rotate" experience like native video apps.
+
+      let hasAutoFullscreened = false;
+
+      player.on('play', () => {
+        if (!isMobileDevice()) return;
+        if (hasAutoFullscreened) return;  // Only trigger once per session
+        hasAutoFullscreened = true;
+
+        // Request fullscreen — must be called inside a user-gesture handler
+        const el = player.el();
+        const requestFs =
+          el.requestFullscreen ||
+          el.webkitRequestFullscreen ||
+          el.mozRequestFullScreen ||
+          el.msRequestFullscreen;
+
+        if (requestFs) {
+          requestFs.call(el)
+            .then(() => {
+              // Now we are in fullscreen → lock landscape
+              lockLandscape();
+            })
+            .catch(() => {
+              // Fullscreen was denied (e.g. iOS) → just lock orientation directly
+              lockLandscape();
+            });
+        } else {
+          // Fallback: just try locking orientation without fullscreen
+          lockLandscape();
+        }
+      });
+
+      // Also lock landscape whenever fullscreen is entered (e.g. user taps ⛶ button manually)
+      player.on('fullscreenchange', () => {
+        if (player.isFullscreen()) {
+          lockLandscape();
+        } else {
+          // Exited fullscreen → release lock so OS can rotate back
+          unlockOrientation();
+          hasAutoFullscreened = false; // Allow re-trigger if they re-open
+        }
+      });
+
+      // Browser-native fullscreenchange (iOS Safari / Firefox)
+      const handleBrowserFullscreen = () => {
+        const fsEl =
+          document.fullscreenElement ||
+          document.webkitFullscreenElement ||
+          document.mozFullscreenElement;
+
+        if (fsEl) {
+          lockLandscape();
+        } else {
+          unlockOrientation();
+          hasAutoFullscreened = false;
+        }
+      };
+
+      document.addEventListener('fullscreenchange', handleBrowserFullscreen);
+      document.addEventListener('webkitfullscreenchange', handleBrowserFullscreen);
+      document.addEventListener('mozfullscreenchange', handleBrowserFullscreen);
+
+      // Store cleanup ref so we can remove listeners on unmount
+      player._cleanupOrientationHandlers = () => {
+        document.removeEventListener('fullscreenchange', handleBrowserFullscreen);
+        document.removeEventListener('webkitfullscreenchange', handleBrowserFullscreen);
+        document.removeEventListener('mozfullscreenchange', handleBrowserFullscreen);
+      };
+
+      // ─────────────────────────────────────────────────────────────────────
 
       // Progress Tracking (Heartbeat)
       player.on('timeupdate', () => {
@@ -153,6 +321,12 @@ export const VideoPlayer = (props) => {
     const player = playerRef.current;
     return () => {
       if (player && !player.isDisposed()) {
+        // Clean up orientation event listeners
+        if (player._cleanupOrientationHandlers) {
+          player._cleanupOrientationHandlers();
+        }
+        // Always unlock orientation when navigating away
+        unlockOrientation();
         player.dispose();
         playerRef.current = null;
       }

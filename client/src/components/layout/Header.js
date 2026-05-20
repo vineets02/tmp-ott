@@ -16,8 +16,24 @@ const navItems = [
   { to: "/contact", label: "Contact" },
 ];
 
+const getAvatarUrl = (avatar, name = "") => {
+  if (!avatar || avatar === "/netflix_icon.jpg" || avatar.includes("netflix_icon.jpg") || avatar.includes("wiki") || avatar.includes("pinimg")) {
+    const colors = ["#E50914", "#E87511", "#F5A623", "#46D369", "#2B90EF", "#7B1FA2", "#E91E63", "#00BCD4"];
+    let hash = 0;
+    const cleanName = name || "User";
+    for (let i = 0; i < cleanName.length; i++) {
+      hash = cleanName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const color = colors[Math.abs(hash) % colors.length];
+    const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" rx="16" fill="${color}"/><circle cx="33" cy="40" r="7" fill="white"/><circle cx="67" cy="40" r="7" fill="white"/><path d="M30 62 Q50 78 70 62" stroke="white" stroke-width="7" stroke-linecap="round" fill="none"/></svg>`;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
+  }
+  return avatar;
+};
+
 export default function Header() {
   const auth = useSelector((state) => state.auth);
+
   const watchlist = useSelector((state) => state.watchlist);
   const rent = useSelector((state) => state.rent);
   const dispatch = useDispatch();
@@ -148,7 +164,7 @@ export default function Header() {
                 className="flex items-center gap-2"
               >
                 <img
-                  src={auth?.activeProfile?.avatar || "/netflix_icon.jpg"}
+                  src={getAvatarUrl(auth?.activeProfile?.avatar, auth?.activeProfile?.name)}
                   alt="Avatar"
                   className="h-10 w-10 rounded-xl object-cover border-2 border-transparent group-hover/profile:border-amber-500 transition-all"
                 />

@@ -9,12 +9,36 @@ import toast from "react-hot-toast";
 import config from "../../config";
 import { AiOutlinePlus } from "react-icons/ai";
 
-const avatars = [
-  "/netflix_icon.jpg",
-  "https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png",
-  "https://i.pinimg.com/originals/b6/77/cd/b677cd1cde292f261166533d6fe75872.png",
-  "https://i.pinimg.com/originals/e3/94/30/e39430434f2b8207188f880ac66c6411.png",
+const PRESET_COLORS = [
+  "#E50914", // Netflix Red
+  "#E87511", // Orange
+  "#F5A623", // Yellow
+  "#46D369", // Green
+  "#2B90EF", // Blue
+  "#7B1FA2", // Purple
+  "#E91E63", // Pink
+  "#00BCD4", // Cyan
+  "#1F2937", // Charcoal
 ];
+
+const generateAvatarSvg = (bgColor) => {
+  const svgString = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><rect width="100" height="100" rx="16" fill="${bgColor}"/><circle cx="33" cy="40" r="7" fill="white"/><circle cx="67" cy="40" r="7" fill="white"/><path d="M30 62 Q50 78 70 62" stroke="white" stroke-width="7" stroke-linecap="round" fill="none"/></svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
+};
+
+const getAvatarUrl = (avatar, name = "") => {
+  if (!avatar || avatar === "/netflix_icon.jpg" || avatar.includes("netflix_icon.jpg") || avatar.includes("wiki") || avatar.includes("pinimg")) {
+    const colors = PRESET_COLORS;
+    let hash = 0;
+    const cleanName = name || "User";
+    for (let i = 0; i < cleanName.length; i++) {
+      hash = cleanName.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const color = colors[Math.abs(hash) % colors.length];
+    return generateAvatarSvg(color);
+  }
+  return avatar;
+};
 
 export default function ProfilesPage() {
   const auth = useSelector((state) => state.auth);
@@ -24,6 +48,7 @@ export default function ProfilesPage() {
   const [isManaging, setIsManaging] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [newProfileName, setNewProfileName] = useState("");
+  const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0]);
   const [isChild, setIsChild] = useState(false);
   const navigate = useNavigate();
 
@@ -52,8 +77,11 @@ export default function ProfilesPage() {
   };
 
   const addProfile = async () => {
+    if (!newProfileName.trim()) {
+      return toast.error("Profile name is required");
+    }
     try {
-      const avatar = avatars[Math.floor(Math.random() * avatars.length)];
+      const avatar = generateAvatarSvg(selectedColor);
       const { data } = await axios.post(`${config.API_BASE_URL}/api/v1/auth/profiles`, {
         name: newProfileName,
         avatar,
@@ -64,6 +92,7 @@ export default function ProfilesPage() {
         setShowAddModal(false);
         setNewProfileName("");
         setIsChild(false);
+        setSelectedColor(PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)]);
         toast.success("Profile created!");
       }
     } catch (error) {
@@ -98,7 +127,7 @@ export default function ProfilesPage() {
                 className={`relative h-24 w-24 md:h-40 md:w-40 overflow-hidden rounded-xl border-4 transition-all cursor-pointer 
                   ${isManaging ? "border-zinc-500 opacity-60" : "border-transparent hover:border-white group-hover:scale-105"}`}
               >
-                <img src={p.avatar} alt={p.name} className="h-full w-full object-cover" />
+                <img src={getAvatarUrl(p.avatar, p.name)} alt={p.name} className="h-full w-full object-cover" />
                 {isManaging && (
                   <div 
                     onClick={(e) => { e.stopPropagation(); deleteProfile(p._id); }}
@@ -135,15 +164,44 @@ export default function ProfilesPage() {
         {/* Add Modal */}
         {showAddModal && (
           <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4">
-            <div className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md border border-zinc-800">
+            <div className="bg-zinc-900 p-8 rounded-3xl w-full max-w-md border border-zinc-800 shadow-2xl">
               <h2 className="text-3xl font-black mb-6">New Profile</h2>
+              
               <input 
                 autoFocus
-                className="w-full bg-zinc-800 border-none rounded-xl p-4 text-white mb-6"
+                className="w-full bg-zinc-800 border-none rounded-xl p-4 text-white mb-6 focus:ring-2 focus:ring-amber-500"
                 placeholder="Profile Name"
                 value={newProfileName}
                 onChange={(e) => setNewProfileName(e.target.value)}
               />
+
+              {/* Dynamic Avatar Preview & Color Picker */}
+              <div className="flex flex-col items-center mb-6 bg-zinc-950 p-6 rounded-2xl border border-zinc-850">
+                <div 
+                  className="h-28 w-28 rounded-2xl overflow-hidden shadow-2xl mb-4 border-2 border-zinc-800 transition-all duration-300"
+                >
+                  <img 
+                    src={generateAvatarSvg(selectedColor)} 
+                    alt="Avatar Preview" 
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Choose Background Color</p>
+                <div className="flex flex-wrap justify-center gap-2 max-w-[280px]">
+                  {PRESET_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      onClick={() => setSelectedColor(color)}
+                      className={`h-7 w-7 rounded-full transition-all hover:scale-110 active:scale-95 ${
+                        selectedColor === color ? "ring-2 ring-white scale-110 border-2 border-zinc-900" : "border border-zinc-800"
+                      }`}
+                      style={{ backgroundColor: color }}
+                    />
+                  ))}
+                </div>
+              </div>
+
               <div className="flex gap-4">
                 <button 
                   onClick={addProfile}
