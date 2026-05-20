@@ -75,6 +75,14 @@ const movieSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    introStart: {
+      type: Number,
+      default: 0,   // seconds — 0 means no intro configured
+    },
+    introEnd: {
+      type: Number,
+      default: 0,   // seconds
+    },
   },
   { timestamps: true }
 )

@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
 body {
   @apply bg-[#181818] text-white overflow-x-hidden;
 }
@@ -12,5 +13,45 @@ body {
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+}
+
+/* ── Hero Carousel Mobile Fixes ───────────────────────────── */
+.hero-carousel .carousel .control-dots {
+  bottom: 6px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.hero-carousel .carousel .control-dots .dot {
+  width: 6px !important;
+  height: 6px !important;
+  margin: 0 4px !important;
+  background: rgba(255,255,255,0.4) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+.hero-carousel .carousel .control-dots .dot.selected {
+  background: #f59e0b !important;
+  width: 18px !important;
+  border-radius: 3px !important;
+}
+/* Remove carousel arrows — we use our own */
+.hero-carousel .carousel .control-arrow {
+  display: none !important;
+}
+
+/* ── Custom Scrollbar (desktop) ───────────────────────────── */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 99px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #f59e0b; }
+
+/* ── Safe area for notch devices ─────────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
   }
 }

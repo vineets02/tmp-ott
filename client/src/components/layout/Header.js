@@ -78,25 +78,25 @@ export default function Header() {
 
   return (
     <header 
-      className={`fixed top-0 inset-x-0 z-[100] transition-all duration-500 px-6 py-4 md:px-12 ${
-        isScrolled ? "bg-black/95 backdrop-blur-xl border-b border-zinc-800 py-3 shadow-2xl" : "bg-gradient-to-b from-black/80 to-transparent"
+      className={`fixed top-0 inset-x-0 z-[100] transition-all duration-500 px-3 py-3 md:px-12 md:py-4 ${
+        isScrolled ? "bg-black/95 backdrop-blur-xl border-b border-zinc-800 shadow-2xl" : "bg-gradient-to-b from-black/80 to-transparent"
       }`}
     >
-      <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-8">
+      <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-4">
         
         {/* Left: Logo & Nav */}
-        <div className="flex items-center gap-12">
-          <Link to="/" className="flex items-center gap-3 group">
+        <div className="flex items-center gap-6 md:gap-12 min-w-0">
+          <Link to="/" className="flex items-center gap-2 group shrink-0">
             <img
               src="/Logo.png"
               alt="TMP"
-              className="h-10 w-10 object-contain transition-transform group-hover:scale-110"
+              className="h-8 w-8 md:h-10 md:w-10 object-contain transition-transform group-hover:scale-110"
             />
             <div className="flex flex-col leading-none">
-              <span className="text-xl font-black text-white tracking-tighter">
+              <span className="text-sm md:text-xl font-black text-white tracking-tighter">
                 TORTOISE <span className="text-amber-500">MOTION</span>
               </span>
-              <span className="text-[10px] font-bold text-zinc-500 tracking-[0.3em] uppercase">Pictures</span>
+              <span className="hidden sm:block text-[8px] md:text-[10px] font-bold text-zinc-500 tracking-[0.3em] uppercase">Pictures</span>
             </div>
           </Link>
 
@@ -119,14 +119,14 @@ export default function Header() {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-2 md:gap-6 shrink-0">
           
-          {/* Integrated Search */}
-          <div className={`relative flex items-center transition-all duration-300 ${isSearchExpanded ? "w-64" : "w-10"}`}>
+          {/* Search */}
+          <div className={`relative flex items-center transition-all duration-300 ${isSearchExpanded ? "w-44 sm:w-64" : "w-8 md:w-10"}`}>
             <input
               type="text"
               placeholder="Search Titles..."
-              className={`w-full bg-zinc-900 border border-zinc-800 rounded-full py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-amber-500 transition-all ${
+              className={`w-full bg-zinc-900 border border-zinc-800 rounded-full py-2 pl-8 pr-3 text-xs md:text-sm text-white focus:outline-none focus:border-amber-500 transition-all ${
                 isSearchExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
               }`}
               value={searchQuery}
@@ -135,16 +135,17 @@ export default function Header() {
             />
             <button 
               onClick={() => setIsSearchExpanded(!isSearchExpanded)}
-              className="absolute left-0 h-10 w-10 flex items-center justify-center text-zinc-400 hover:text-amber-500 transition-colors"
+              className="absolute left-0 h-8 w-8 md:h-10 md:w-10 flex items-center justify-center text-zinc-400 hover:text-amber-500 transition-colors"
             >
-              <AiOutlineSearch size={22} />
+              <AiOutlineSearch size={18} />
             </button>
           </div>
 
           {/* Watchlist Count */}
           <Link to="/watchlist" className="relative group text-zinc-400 hover:text-white transition-colors">
-            <span className="text-sm font-black uppercase tracking-widest hidden sm:block">My List</span>
-            <span className="absolute -top-2 -right-3 h-5 min-w-[20px] flex items-center justify-center bg-amber-500 text-black text-[10px] font-black rounded-full px-1 shadow-lg ring-2 ring-black">
+            <span className="text-xs md:text-sm font-black uppercase tracking-widest hidden sm:block">My List</span>
+            <BsFillBagFill size={18} className="sm:hidden"/>
+            <span className="absolute -top-2 -right-3 h-4 min-w-[16px] flex items-center justify-center bg-amber-500 text-black text-[9px] font-black rounded-full px-0.5 shadow-lg ring-2 ring-black">
               {watchlist?.length || 0}
             </span>
           </Link>
@@ -153,7 +154,7 @@ export default function Header() {
           {!auth?.user ? (
             <button
               onClick={() => navigate("/login")}
-              className="bg-amber-500 hover:bg-amber-400 text-black px-6 py-2 rounded-full text-sm font-black transition-all shadow-xl hover:scale-105"
+              className="bg-amber-500 hover:bg-amber-400 text-black px-4 py-1.5 md:px-6 md:py-2 rounded-full text-xs md:text-sm font-black transition-all shadow-xl hover:scale-105"
             >
               LOGIN
             </button>
@@ -166,11 +167,11 @@ export default function Header() {
                 <img
                   src={getAvatarUrl(auth?.activeProfile?.avatar, auth?.activeProfile?.name)}
                   alt="Avatar"
-                  className="h-10 w-10 rounded-xl object-cover border-2 border-transparent group-hover/profile:border-amber-500 transition-all"
+                  className="h-8 w-8 md:h-10 md:w-10 rounded-xl object-cover border-2 border-transparent group-hover/profile:border-amber-500 transition-all"
                 />
               </button>
 
-              <div className="absolute right-0 mt-4 w-64 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-2 opacity-0 invisible group-hover/profile:opacity-100 group-hover/profile:visible transition-all translate-y-2 group-hover/profile:translate-y-0 overflow-hidden">
+              <div className="absolute right-0 mt-3 w-56 md:w-64 bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-2 opacity-0 invisible group-hover/profile:opacity-100 group-hover/profile:visible transition-all translate-y-2 group-hover/profile:translate-y-0 overflow-hidden">
                 <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-950/50 rounded-xl mb-2">
                   <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Watching as</p>
                   <p className="text-amber-500 font-black truncate">{auth?.activeProfile?.name || auth?.user?.name}</p>
@@ -206,12 +207,13 @@ export default function Header() {
           {/* Mobile Menu Toggle */}
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden text-white"
+            className="lg:hidden text-white p-1"
           >
-            {mobileMenuOpen ? <AiOutlineClose size={28} /> : <AiOutlineMenu size={28} />}
+            {mobileMenuOpen ? <AiOutlineClose size={24} /> : <AiOutlineMenu size={24} />}
           </button>
         </div>
       </div>
+
 
       {/* Mobile Slide-out Menu */}
       <div className={`fixed inset-0 z-[200] bg-black transition-transform duration-500 lg:hidden ${mobileMenuOpen ? "translate-x-0" : "translate-x-full"}`}>

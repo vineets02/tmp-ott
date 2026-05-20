@@ -8,10 +8,10 @@ import Swal from "sweetalert2";
 import {
   BiArrowBack,
   BiCloudUpload,
-  BiMovie,
   BiInfoCircle,
   BiFile,
-  BiLoaderAlt
+  BiLoaderAlt,
+  BiSkipNext
 } from "react-icons/bi";
 
 export default function EditMovie() {
@@ -41,13 +41,12 @@ export default function EditMovie() {
     isPremium: false,
     isKids: false,
     price: "",
-    rentalPrice: "0"
+    rentalPrice: "0",
+    introStart: "0",
+    introEnd: "0",
   });
 
-  const [files, setFiles] = useState({
-    poster: null,
-    video: null
-  });
+  const [files, setFiles] = useState({ poster: null, video: null });
 
   const fetchData = async () => {
     try {
@@ -78,33 +77,27 @@ export default function EditMovie() {
           isPremium: movie.isPremium || false,
           isKids: movie.isKids || false,
           rentalPrice: movie.rentalPrice ?? 0,
+          introStart: movie.introStart ?? 0,
+          introEnd: movie.introEnd ?? 0,
         });
       }
     } catch (error) {
-      
+      // silent
     } finally {
       setInitialLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [params.slug]);
+  useEffect(() => { fetchData(); }, [params.slug]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value
-    }));
+    setFormData(prev => ({ ...prev, [name]: type === "checkbox" ? checked : value }));
   };
 
   const handleFileChange = (e) => {
     const { name, files: selectedFiles } = e.target;
-    setFiles(prev => ({
-      ...prev,
-      [name]: selectedFiles[0]
-    }));
+    setFiles(prev => ({ ...prev, [name]: selectedFiles[0] }));
   };
 
   const handleSubmit = async (e) => {
@@ -114,56 +107,47 @@ export default function EditMovie() {
       setUploadProgress(0);
       const data = new FormData();
       Object.entries(formData).forEach(([key, value]) => {
-        if (key !== '_id') data.append(key, value);
+        if (key !== "_id") data.append(key, value);
       });
-
       if (files.poster) data.append("poster", files.poster);
       if (files.video) data.append("video", files.video);
 
       const startTime = Date.now();
-
-      const res = await axios.put(`${config.API_BASE_URL}/api/v1/movie/update-movie/${formData._id}`, data, {
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(percentCompleted);
-
-          // Calculate time remaining
-          const elapsedTime = (Date.now() - startTime) / 1000; // seconds
-          if (elapsedTime > 0 && progressEvent.loaded > 0) {
-            const speed = progressEvent.loaded / elapsedTime; // bytes per second
-            const remainingBytes = progressEvent.total - progressEvent.loaded;
-            const remainingSeconds = remainingBytes / speed;
-
-            setUploadSpeed((speed / (1024 * 1024)).toFixed(2) + " MB/s");
-
-            if (remainingSeconds > 0) {
-              const hours = Math.floor(remainingSeconds / 3600);
-              const minutes = Math.floor((remainingSeconds % 3600) / 60);
-              const seconds = Math.floor(remainingSeconds % 60);
-
-              let timeStr = "";
-              if (hours > 0) timeStr += `${hours}h `;
-              if (minutes > 0 || hours > 0) timeStr += `${minutes}m `;
-              timeStr += `${seconds}s remaining`;
-
-              setRemainingTime(timeStr);
-            } else {
-              setRemainingTime("Finishing upload...");
+      const res = await axios.put(
+        `${config.API_BASE_URL}/api/v1/movie/update-movie/${formData._id}`,
+        data,
+        {
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percentCompleted);
+            const elapsedTime = (Date.now() - startTime) / 1000;
+            if (elapsedTime > 0 && progressEvent.loaded > 0) {
+              const speed = progressEvent.loaded / elapsedTime;
+              const remainingBytes = progressEvent.total - progressEvent.loaded;
+              const remainingSeconds = remainingBytes / speed;
+              setUploadSpeed((speed / (1024 * 1024)).toFixed(2) + " MB/s");
+              if (remainingSeconds > 0) {
+                const hours = Math.floor(remainingSeconds / 3600);
+                const minutes = Math.floor((remainingSeconds % 3600) / 60);
+                const seconds = Math.floor(remainingSeconds % 60);
+                let timeStr = "";
+                if (hours > 0) timeStr += `${hours}h `;
+                if (minutes > 0 || hours > 0) timeStr += `${minutes}m `;
+                timeStr += `${seconds}s remaining`;
+                setRemainingTime(timeStr);
+              } else {
+                setRemainingTime("Finishing upload...");
+              }
             }
-          }
+          },
         }
-      });
+      );
 
       if (res.data.success) {
-        Swal.fire({
-          title: "Content Updated",
-          icon: "success",
-          background: "#18181b",
-          color: "#fff"
-        }).then(() => navigate("/dashboard/admin/movies"));
+        Swal.fire({ title: "Content Updated", icon: "success", background: "#18181b", color: "#fff" })
+          .then(() => navigate("/dashboard/admin/movies"));
       }
     } catch (error) {
-      
       Swal.fire("Error", "Failed to update content", "error");
     } finally {
       setLoading(false);
@@ -197,67 +181,54 @@ export default function EditMovie() {
           </div>
 
           <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+            {/* ── LEFT COLUMN (col-span-2) ── */}
             <div className="lg:col-span-2 space-y-8">
+
+              {/* Essential Info */}
               <section className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
                 <div className="flex items-center gap-3 mb-8 pb-4 border-b border-zinc-800">
                   <BiInfoCircle className="text-amber-500" size={20} />
                   <h3 className="text-xl font-black text-white uppercase tracking-tighter">Essential Information</h3>
                 </div>
-
                 <div className="space-y-6">
                   <div>
                     <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Movie Title</label>
-                    <input type="text" name="title" required className="w-full bg-zinc-950 border-zinc-800 rounded-xl py-3 px-4 text-white focus:ring-amber-500 transition-all" value={formData.title} onChange={handleInputChange} />
+                    <input type="text" name="title" required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 px-4 text-white focus:border-amber-500 outline-none transition-all" value={formData.title} onChange={handleInputChange} />
                   </div>
-
                   <div>
                     <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Synopsis</label>
-                    <textarea name="description" required rows={6} className="w-full bg-zinc-950 border-zinc-800 rounded-xl py-3 px-4 text-white focus:ring-amber-500 transition-all resize-none" value={formData.description} onChange={handleInputChange} />
+                    <textarea name="description" required rows={6} className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 px-4 text-white focus:border-amber-500 outline-none transition-all resize-none" value={formData.description} onChange={handleInputChange} />
                   </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Director</label>
-                      <input type="text" name="director" required className="w-full bg-zinc-950 border-zinc-800 rounded-xl py-3 px-4 text-white focus:ring-amber-500 transition-all" value={formData.director} onChange={handleInputChange} />
+                      <input type="text" name="director" required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 px-4 text-white focus:border-amber-500 outline-none transition-all" value={formData.director} onChange={handleInputChange} />
                     </div>
                     <div>
                       <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Cast</label>
-                      <input type="text" name="cast" className="w-full bg-zinc-950 border-zinc-800 rounded-xl py-3 px-4 text-white focus:ring-amber-500 transition-all" value={formData.cast} onChange={handleInputChange} />
+                      <input type="text" name="cast" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 px-4 text-white focus:border-amber-500 outline-none transition-all" value={formData.cast} onChange={handleInputChange} />
                     </div>
-                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Subscription Price (₹)</label>
-                        <input
-                          type="number"
-                          name="price"
-                          placeholder="199"
-                          className="w-full bg-zinc-950 border-zinc-800 rounded-xl py-3 px-4 text-white focus:ring-amber-500 transition-all"
-                          value={formData.price}
-                          onChange={handleInputChange}
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Rental Price (₹) <span className="text-amber-500">(0 = not rentable)</span></label>
-                        <input
-                          type="number"
-                          name="rentalPrice"
-                          placeholder="49"
-                          className="w-full bg-zinc-950 border-amber-500/30 border rounded-xl py-3 px-4 text-white focus:ring-amber-500 transition-all"
-                          value={formData.rentalPrice}
-                          onChange={handleInputChange}
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">Subscription Price (₹)</label>
+                      <input type="number" name="price" placeholder="199" className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 px-4 text-white focus:border-amber-500 outline-none transition-all" value={formData.price} onChange={handleInputChange} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest mb-2">
+                        Rental Price (₹) <span className="text-amber-500">(0 = not rentable)</span>
+                      </label>
+                      <input type="number" name="rentalPrice" placeholder="49" className="w-full bg-zinc-950 border border-amber-500/30 border rounded-xl py-3 px-4 text-white focus:border-amber-500 outline-none transition-all" value={formData.rentalPrice} onChange={handleInputChange} />
                     </div>
                   </div>
                 </div>
               </section>
 
+              {/* Media Update */}
               <section className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
                 <div className="flex items-center gap-3 mb-8 pb-4 border-b border-zinc-800">
                   <BiFile className="text-amber-500" size={20} />
                   <h3 className="text-xl font-black text-white uppercase tracking-tighter">Media Update</h3>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-4">
                     <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest">Update Video</label>
@@ -269,7 +240,6 @@ export default function EditMovie() {
                       </div>
                     </div>
                   </div>
-
                   <div className="space-y-4">
                     <label className="block text-xs font-black text-zinc-500 uppercase tracking-widest">Update Poster</label>
                     <div className="relative group">
@@ -288,21 +258,77 @@ export default function EditMovie() {
                   </div>
                 </div>
               </section>
-            </div>
 
+              {/* ── Skip Intro ── */}
+              <section className="bg-zinc-900 border border-amber-500/20 rounded-3xl p-8">
+                <div className="flex items-center gap-3 mb-2 pb-4 border-b border-zinc-800">
+                  <BiSkipNext className="text-amber-500" size={24} />
+                  <div>
+                    <h3 className="text-xl font-black text-white uppercase tracking-tighter">Skip Intro</h3>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-0.5">Set the intro window in seconds</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  <div>
+                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Intro Starts At (sec)</label>
+                    <input
+                      type="number" name="introStart" min="0" placeholder="e.g. 5"
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 px-4 text-white focus:border-amber-500 outline-none transition-all"
+                      value={formData.introStart} onChange={handleInputChange}
+                    />
+                    <p className="text-[10px] text-zinc-600 mt-1">= {Math.floor(formData.introStart / 60)}m {formData.introStart % 60}s</p>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Intro Ends At (sec)</label>
+                    <input
+                      type="number" name="introEnd" min="0" placeholder="e.g. 95"
+                      className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 px-4 text-white focus:border-amber-500 outline-none transition-all"
+                      value={formData.introEnd} onChange={handleInputChange}
+                    />
+                    <p className="text-[10px] text-zinc-600 mt-1">= {Math.floor(formData.introEnd / 60)}m {formData.introEnd % 60}s</p>
+                  </div>
+                </div>
+
+                {Number(formData.introEnd) > Number(formData.introStart) && (
+                  <div className="mt-6">
+                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Timeline Preview</p>
+                    <div className="relative h-4 bg-zinc-800 rounded-full overflow-hidden">
+                      <div
+                        className="absolute h-full bg-amber-500/70 rounded-full transition-all"
+                        style={{ width: `${Math.min(((formData.introEnd - formData.introStart) / Math.max(formData.introEnd, 1)) * 100, 100)}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className="text-[10px] text-amber-500 font-bold">{formData.introStart}s</span>
+                      <span className="text-[10px] text-zinc-500 font-bold">window: {formData.introEnd - formData.introStart}s</span>
+                      <span className="text-[10px] text-amber-500 font-bold">{formData.introEnd}s</span>
+                    </div>
+                  </div>
+                )}
+
+                {Number(formData.introEnd) === 0 && (
+                  <p className="text-center text-zinc-600 text-xs italic mt-4">Set both values to enable the Skip Intro button for viewers.</p>
+                )}
+              </section>
+
+            </div>{/* end lg:col-span-2 */}
+
+            {/* ── RIGHT SIDEBAR ── */}
             <div className="space-y-8">
+
               <section className="bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
                 <h3 className="text-xs font-black text-zinc-500 uppercase tracking-widest mb-6">Categorization</h3>
                 <div className="space-y-6">
                   <div>
                     <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Genre</label>
-                    <select name="category" required className="w-full bg-zinc-950 border-zinc-800 rounded-xl py-3 px-4 text-white text-sm" value={formData.category} onChange={handleInputChange}>
+                    <select name="category" required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 px-4 text-white text-sm focus:border-amber-500 outline-none" value={formData.category} onChange={handleInputChange}>
                       {categories.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
                     </select>
                   </div>
                   <div>
                     <label className="block text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-2">Content Type</label>
-                    <select name="contenttype" required className="w-full bg-zinc-950 border-zinc-800 rounded-xl py-3 px-4 text-white text-sm" value={formData.contenttype} onChange={handleInputChange}>
+                    <select name="contenttype" required className="w-full bg-zinc-950 border border-zinc-800 rounded-xl py-3 px-4 text-white text-sm focus:border-amber-500 outline-none" value={formData.contenttype} onChange={handleInputChange}>
                       {contentTypes.map(t => <option key={t._id} value={t._id}>{t.contenttype}</option>)}
                     </select>
                   </div>
@@ -330,10 +356,7 @@ export default function EditMovie() {
                     <span className="text-amber-500 font-black">{uploadProgress}%</span>
                   </div>
                   <div className="w-full bg-zinc-800 rounded-full h-3 overflow-hidden">
-                    <div
-                      className="bg-amber-500 h-full transition-all duration-300 shadow-[0_0_15px_rgba(245,158,11,0.5)]"
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
+                    <div className="bg-amber-500 h-full transition-all duration-300 shadow-[0_0_15px_rgba(245,158,11,0.5)]" style={{ width: `${uploadProgress}%` }} />
                   </div>
                   <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-zinc-500">
                     <span>{uploadSpeed}</span>
@@ -342,10 +365,16 @@ export default function EditMovie() {
                 </div>
               )}
 
-              <button type="submit" disabled={loading} className="w-full bg-amber-500 hover:bg-amber-400 text-black font-black py-5 rounded-3xl transition-all shadow-[0_10px_30px_rgba(245,158,11,0.3)] disabled:opacity-50 uppercase tracking-widest">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-amber-500 hover:bg-amber-400 text-black font-black py-5 rounded-3xl transition-all shadow-[0_10px_30px_rgba(245,158,11,0.3)] disabled:opacity-50 uppercase tracking-widest"
+              >
                 {loading ? "Updating Content..." : "Save Changes"}
               </button>
-            </div>
+
+            </div>{/* end right sidebar */}
+
           </form>
         </main>
       </div>

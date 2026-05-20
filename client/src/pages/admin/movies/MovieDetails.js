@@ -238,8 +238,8 @@ function MovieDetails() {
       </Helmet>
       <div className="min-h-screen bg-zinc-950 text-white">
 
-        {/* Theater Mode Player */}
-        <div className="relative aspect-video w-full overflow-hidden bg-black shadow-2xl md:h-[80vh]">
+        {/* Theater Mode Player — full-bleed on mobile */}
+        <div className="relative w-full bg-black shadow-2xl" style={{aspectRatio:'16/9'}}>
           {showPaywall ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm p-6 text-center">
               <div className="mb-6 rounded-full bg-amber-500/10 p-6 text-amber-500 ring-1 ring-amber-500/50">
@@ -311,6 +311,8 @@ function MovieDetails() {
                     fluid: true,
                     title: movieDetails.title,
                     startTime: initialProgress,
+                    introStart: movieDetails.introStart || 0,
+                    introEnd: movieDetails.introEnd || 0,
                     sources: [{
                       src: `${config.API_BASE_URL}/api/v1/movie/movie-video/${movieDetails._id}?token=${auth?.token}`,
                       type: 'video/mp4'
@@ -338,21 +340,24 @@ function MovieDetails() {
         </div>
 
         {/* Content Info */}
-        <div className="mx-auto max-w-7xl px-4 py-12 md:px-10">
-          <div className="flex flex-col gap-8 lg:flex-row">
+        <div className="mx-auto max-w-7xl px-4 py-6 md:py-12 md:px-10">
+          <div className="flex flex-col gap-6 lg:flex-row">
+
             {/* Left: Info */}
-            <div className="flex-1 space-y-6">
-              <div className="flex flex-wrap items-center gap-4">
-                <h1 className="text-4xl font-black md:text-6xl">{movieDetails.title}</h1>
-                <div className="flex items-center gap-1 rounded bg-zinc-800 px-3 py-1 text-amber-500">
-                  <AiFillStar />
+            <div className="flex-1 space-y-4">
+
+              {/* Title + Rating row */}
+              <div className="flex flex-wrap items-center gap-3">
+                <h1 className="text-2xl font-black sm:text-4xl md:text-6xl leading-tight">{movieDetails.title}</h1>
+                <div className="flex items-center gap-1 rounded-lg bg-zinc-800 px-3 py-1 text-amber-500 text-sm">
+                  <AiFillStar size={14}/>
                   <span className="font-bold">{averageRating || movieDetails.rating || "0.0"}</span>
                   <span className="text-[10px] text-zinc-500 ml-1">({totalReviews})</span>
                 </div>
-
               </div>
 
-              <div className="flex flex-wrap gap-3 text-sm font-medium text-zinc-400">
+              {/* Metadata pills */}
+              <div className="flex flex-wrap gap-2 text-xs font-semibold text-zinc-400">
                 <span className="rounded border border-zinc-700 px-2 py-0.5">HD</span>
                 <span>{movieDetails.language}</span>
                 <span>•</span>
@@ -361,137 +366,144 @@ function MovieDetails() {
                 <span>{movieDetails.category?.name}</span>
               </div>
 
-              <p className="text-lg leading-relaxed text-zinc-300 md:text-xl">
+              <p className="text-sm sm:text-base leading-relaxed text-zinc-300">
                 {movieDetails.description}
               </p>
 
-              <div className="grid grid-cols-1 gap-6 pt-6 md:grid-cols-2">
+              <div className="grid grid-cols-2 gap-4 pt-2">
                 <div>
-                  <h3 className="mb-2 text-zinc-500 font-bold uppercase tracking-wider text-xs">Director</h3>
-                  <p className="text-amber-500 font-semibold">{movieDetails.director}</p>
+                  <h3 className="mb-1 text-zinc-500 font-bold uppercase tracking-wider text-[10px]">Director</h3>
+                  <p className="text-amber-500 font-semibold text-sm">{movieDetails.director}</p>
                 </div>
                 <div>
-                  <h3 className="mb-2 text-zinc-500 font-bold uppercase tracking-wider text-xs">Starring</h3>
-                  <p className="text-zinc-200">{movieDetails.cast?.join(", ") || "Main Cast Info Unavailable"}</p>
+                  <h3 className="mb-1 text-zinc-500 font-bold uppercase tracking-wider text-[10px]">Starring</h3>
+                  <p className="text-zinc-200 text-sm line-clamp-2">{movieDetails.cast?.join(", ") || "N/A"}</p>
                 </div>
               </div>
             </div>
 
-            {/* Right: Actions */}
-            <div className="w-full lg:w-72 space-y-4">
-              <div className="flex flex-col gap-3">
+            {/* Right: Share + Rent Actions — horizontal on mobile, vertical on desktop */}
+            <div className="w-full lg:w-64 space-y-3">
+              <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => handleShare("copy")}
-                  className="flex w-full items-center justify-center gap-3 rounded-xl bg-white/5 py-4 font-bold transition-all hover:bg-white/10"
+                  className="flex flex-col items-center justify-center gap-1 rounded-xl bg-white/5 py-3 font-bold transition-all hover:bg-white/10 text-xs"
                 >
-                  <AiOutlineShareAlt className="text-xl" /> Copy Link
+                  <AiOutlineShareAlt size={18} />
+                  <span>Copy</span>
                 </button>
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    onClick={() => handleShare("whatsapp")}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500/10 py-3 text-emerald-500 font-bold hover:bg-emerald-500/20 transition-all border border-emerald-500/20"
-                  >
-                    <FaWhatsapp /> WhatsApp
-                  </button>
-                  <button
-                    onClick={() => handleShare("telegram")}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-blue-500/10 py-3 text-blue-500 font-bold hover:bg-blue-500/20 transition-all border border-blue-500/20"
-                  >
-                    <FaTelegramPlane /> Telegram
-                  </button>
-                </div>
+                <button
+                  onClick={() => handleShare("whatsapp")}
+                  className="flex flex-col items-center justify-center gap-1 rounded-xl bg-emerald-500/10 py-3 text-emerald-500 font-bold hover:bg-emerald-500/20 transition-all border border-emerald-500/20 text-xs"
+                >
+                  <FaWhatsapp size={18}/>
+                  <span>WhatsApp</span>
+                </button>
+                <button
+                  onClick={() => handleShare("telegram")}
+                  className="flex flex-col items-center justify-center gap-1 rounded-xl bg-blue-500/10 py-3 text-blue-500 font-bold hover:bg-blue-500/20 transition-all border border-blue-500/20 text-xs"
+                >
+                  <FaTelegramPlane size={18}/>
+                  <span>Telegram</span>
+                </button>
               </div>
 
-              <div className="rounded-2xl bg-zinc-900 p-6">
-                <p className="text-zinc-400 text-sm mb-4 text-center italic font-medium">Experience high-quality streaming</p>
-                <button className="w-full rounded-lg bg-amber-500 py-3 font-black text-black transition-all hover:scale-105 shadow-[0_5px_15px_rgba(245,158,11,0.2)]">
-                  RENT IN 4K — ₹{movieDetails.rentalPrice || 199}
-                </button>
-              </div>
+              {canRent && (
+                <div className="rounded-2xl bg-zinc-900 p-4">
+                  <p className="text-zinc-400 text-xs mb-3 text-center italic font-medium">Rent for 48 hours</p>
+                  <button
+                    onClick={() => setShowRentModal(true)}
+                    className="w-full rounded-lg bg-amber-500 py-3 font-black text-black text-sm transition-all hover:scale-105 shadow-[0_5px_15px_rgba(245,158,11,0.2)]"
+                  >
+                    RENT — ₹{movieDetails.rentalPrice || 199}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
           {/* INTERACTIVE SECTION TABS */}
-          <div className="mt-20 border-t border-zinc-900 pt-16">
-            <div className="flex gap-8 mb-10 border-b border-zinc-900">
-               <button 
+          <div className="mt-8 md:mt-16 border-t border-zinc-900 pt-6 md:pt-12">
+            <div className="flex gap-4 sm:gap-8 mb-6 md:mb-10 border-b border-zinc-900">
+               <button
                   onClick={() => setActiveTab("reviews")}
-                  className={`pb-4 text-xl font-black transition-all ${activeTab === "reviews" ? "text-amber-500 border-b-2 border-amber-500" : "text-zinc-600 hover:text-zinc-400"}`}
+                  className={`pb-3 text-sm sm:text-base font-black transition-all ${activeTab === "reviews" ? "text-amber-500 border-b-2 border-amber-500" : "text-zinc-600 hover:text-zinc-400"}`}
                >
-                  USER REVIEWS ({totalReviews})
+                  REVIEWS ({totalReviews})
                </button>
-               <button 
+               <button
                   onClick={() => setActiveTab("watchparty")}
-                  className={`pb-4 text-xl font-black transition-all flex items-center gap-2 ${activeTab === "watchparty" ? "text-amber-500 border-b-2 border-amber-500" : "text-zinc-600 hover:text-zinc-400"}`}
+                  className={`pb-3 text-sm sm:text-base font-black transition-all flex items-center gap-2 ${activeTab === "watchparty" ? "text-amber-500 border-b-2 border-amber-500" : "text-zinc-600 hover:text-zinc-400"}`}
                >
-                  WATCH PARTY <span className="bg-amber-500/10 text-amber-500 text-[10px] px-2 py-0.5 rounded-full animate-pulse">LIVE Beta</span>
+                  WATCH PARTY <span className="hidden sm:inline bg-amber-500/10 text-amber-500 text-[10px] px-2 py-0.5 rounded-full animate-pulse">LIVE Beta</span>
                </button>
             </div>
 
             {activeTab === "reviews" ? (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                {/* Left: Write Review */}
-                <div className="bg-zinc-900/50 p-8 rounded-3xl border border-zinc-800">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500">
-                        <BiMessageDetail size={24} />
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-12">
+
+                {/* Write Review */}
+                <div className="bg-zinc-900/50 p-5 sm:p-8 rounded-2xl border border-zinc-800">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500">
+                      <BiMessageDetail size={20} />
                     </div>
-                    <h3 className="text-xl font-black text-white">Rate this Movie</h3>
+                    <h3 className="text-base sm:text-xl font-black text-white">Rate this Movie</h3>
                   </div>
-                  
-                  <form onSubmit={handleReviewSubmit} className="space-y-6">
+
+                  <form onSubmit={handleReviewSubmit} className="space-y-4">
                     <div>
-                      <label className="text-xs font-black uppercase text-zinc-500 tracking-widest block mb-4">Your Rating</label>
-                      <div className="flex gap-2">
+                      <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest block mb-3">Your Rating</label>
+                      <div className="flex gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
                             key={star}
                             type="button"
                             onClick={() => setUserReview({ ...userReview, rating: star })}
-                            className={`p-2 transition-all ${userReview.rating >= star ? "text-amber-500 scale-110" : "text-zinc-700"}`}
+                            className={`p-1.5 transition-all ${userReview.rating >= star ? "text-amber-500 scale-110" : "text-zinc-700"}`}
                           >
-                            <AiFillStar size={32} />
+                            <AiFillStar size={28} />
                           </button>
                         ))}
                       </div>
                     </div>
-                    
+
                     <div>
-                      <label className="text-xs font-black uppercase text-zinc-500 tracking-widest block mb-2">Your Review</label>
+                      <label className="text-[10px] font-black uppercase text-zinc-500 tracking-widest block mb-2">Your Review</label>
                       <textarea
                         value={userReview.comment}
                         onChange={(e) => setUserReview({ ...userReview, comment: e.target.value })}
-                        placeholder="Share your thoughts about this movie..."
-                        className="w-full bg-zinc-950 border border-zinc-800 rounded-2xl p-4 text-white min-h-[120px] focus:border-amber-500 outline-none transition-all"
+                        placeholder="Share your thoughts..."
+                        className="w-full bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-white text-sm min-h-[100px] focus:border-amber-500 outline-none transition-all"
                       />
                     </div>
 
                     <button
                       disabled={submittingReview}
-                      className="w-full bg-amber-500 text-black py-4 rounded-2xl font-black hover:bg-amber-400 transition-all shadow-lg disabled:opacity-50"
+                      className="w-full bg-amber-500 text-black py-3 rounded-xl font-black text-sm hover:bg-amber-400 transition-all shadow-lg disabled:opacity-50"
                     >
                       {submittingReview ? "SUBMITTING..." : "POST REVIEW"}
                     </button>
                   </form>
                 </div>
 
-                {/* Right: Review List */}
-                <div className="lg:col-span-2 space-y-8">
-                  <div className="flex items-center justify-between border-b border-zinc-900 pb-4">
-                    <h3 className="text-2xl font-black text-white">Recent Feedback</h3>
-                    <div className="flex items-center gap-2 text-amber-500 font-black">
-                      <AiFillStar /> {averageRating} / 5
+                {/* Review List */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="flex items-center justify-between border-b border-zinc-900 pb-3">
+                    <h3 className="text-base sm:text-2xl font-black text-white">Recent Feedback</h3>
+                    <div className="flex items-center gap-1 text-amber-500 font-black text-sm">
+                      <AiFillStar size={14}/> {averageRating} / 5
                     </div>
                   </div>
 
-                  <div className="space-y-6 max-h-[600px] overflow-y-auto pr-4 custom-scrollbar">
+                  <div className="space-y-4 max-h-[500px] overflow-y-auto pr-1 custom-scrollbar">
                     {reviews.length > 0 ? (
                       reviews.map((rev) => (
-                        <div key={rev._id} className="bg-zinc-900/30 p-6 rounded-2xl border border-zinc-800/50 hover:border-zinc-700 transition-all">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-500">
-                                <BiUserCircle size={24} />
+                        <div key={rev._id} className="bg-zinc-900/30 p-4 rounded-xl border border-zinc-800/50 hover:border-zinc-700 transition-all">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <div className="h-8 w-8 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-500">
+                                <BiUserCircle size={20} />
                               </div>
                               <div>
                                 <p className="text-sm font-bold text-white">{rev.user?.name || "Anonymous"}</p>
@@ -499,16 +511,16 @@ function MovieDetails() {
                               </div>
                             </div>
                             <div className="flex text-amber-500">
-                              {[...Array(rev.rating)].map((_, i) => <AiFillStar key={i} size={14} />)}
+                              {[...Array(rev.rating)].map((_, i) => <AiFillStar key={i} size={12} />)}
                             </div>
                           </div>
-                          <p className="text-zinc-400 leading-relaxed italic">"{rev.comment}"</p>
+                          <p className="text-zinc-400 text-sm leading-relaxed italic">"{rev.comment}"</p>
                         </div>
                       ))
                     ) : (
-                      <div className="text-center py-20 text-zinc-700">
-                        <BiMessageDetail size={48} className="mx-auto mb-4 opacity-20" />
-                        <p className="font-bold italic">Be the first to review this movie!</p>
+                      <div className="text-center py-16 text-zinc-700">
+                        <BiMessageDetail size={40} className="mx-auto mb-3 opacity-20" />
+                        <p className="font-bold italic text-sm">Be the first to review!</p>
                       </div>
                     )}
                   </div>
@@ -542,15 +554,12 @@ function MovieDetails() {
 
           {/* Related Content Section */}
           {relatedMovies.length > 0 && (
-            <div className="mt-20 border-t border-zinc-900 pt-16">
-              <div className="mb-8 flex items-center justify-between">
-                <div>
-                  <h2 className="text-sm font-black uppercase tracking-[0.3em] text-amber-500 mb-1">Recommended</h2>
-                  <h3 className="text-3xl font-black text-white">You May Also Like</h3>
-                </div>
-                <div className="h-px flex-1 mx-10 bg-zinc-900" />
+            <div className="mt-8 md:mt-16 border-t border-zinc-900 pt-6 md:pt-12">
+              <div className="mb-5 md:mb-8">
+                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500 mb-1">Recommended</h2>
+                <h3 className="text-xl sm:text-3xl font-black text-white">You May Also Like</h3>
               </div>
-              <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 pb-20">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 pb-16">
                 {relatedMovies.map((m) => (
                   <NewCard key={m._id} movie={m} />
                 ))}

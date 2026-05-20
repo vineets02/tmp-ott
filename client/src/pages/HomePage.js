@@ -108,50 +108,57 @@ export default function HomePage() {
           showIndicators={true}
           className="hero-carousel"
         >
-          {displayFeatured.map((heroMovie) => {
+        {displayFeatured.map((heroMovie) => {
             const heroPoster = `${config.API_BASE_URL}/api/v1/movie/movie-poster/${heroMovie._id}`;
             const heroTrailer = `${config.API_BASE_URL}/api/v1/movie/movie-trailer/${heroMovie._id}`;
 
             return (
               <div key={heroMovie._id}>
                 <Hero videoUrl={heroTrailer} posterUrl={heroPoster}>
-                  <div className="max-w-2xl space-y-6 text-left">
-                    <div className="flex items-center gap-3">
-                      <div className="h-1 w-12 bg-amber-500 rounded-full" />
-                      <span className="text-sm font-black uppercase tracking-[0.4em] text-amber-500">
+                  <div className="max-w-2xl space-y-3 sm:space-y-6 text-left">
+
+                    {/* Featured tag */}
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="h-0.5 w-8 sm:h-1 sm:w-12 bg-amber-500 rounded-full" />
+                      <span className="text-[10px] sm:text-sm font-black uppercase tracking-[0.3em] sm:tracking-[0.4em] text-amber-500">
                         FEATURED CONTENT
                       </span>
                     </div>
-                    
-                    <h1 className="text-5xl font-black leading-none tracking-tighter md:text-8xl drop-shadow-2xl">
+
+                    {/* Title */}
+                    <h1 className="text-3xl sm:text-5xl font-black leading-none tracking-tighter md:text-8xl drop-shadow-2xl line-clamp-2">
                       {heroMovie.title}
                     </h1>
-                    
-                    <div className="flex items-center gap-4 text-sm font-bold text-zinc-400">
-                      <span className="text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded">HD</span>
+
+                    {/* Metadata */}
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm font-bold text-zinc-400">
+                      <span className="text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded text-[10px] sm:text-xs">HD</span>
                       <span>{heroMovie.language}</span>
                       <span>{heroMovie.duration}</span>
-                      <span>{heroMovie.category?.name}</span>
+                      <span className="hidden sm:inline">{heroMovie.category?.name}</span>
                     </div>
 
-                    <p className="line-clamp-3 text-lg leading-relaxed text-zinc-300 md:text-xl max-w-xl">
+                    {/* Description — hidden on very small screens */}
+                    <p className="hidden sm:block line-clamp-2 md:line-clamp-3 text-sm sm:text-lg leading-relaxed text-zinc-300 md:text-xl max-w-xl">
                       {heroMovie.description}
                     </p>
 
-                    <div className="flex flex-wrap gap-4 pt-4">
+                    {/* CTA Buttons */}
+                    <div className="flex flex-wrap gap-2 sm:gap-4 pt-1 sm:pt-4">
                       <button
                         onClick={() => navigate(`/movie/${heroMovie.slug}`)}
-                        className="group flex items-center gap-3 rounded-xl bg-white px-8 py-4 text-lg font-black text-black transition-all hover:scale-105 hover:bg-amber-500 shadow-xl"
+                        className="group flex items-center gap-2 sm:gap-3 rounded-lg sm:rounded-xl bg-white px-5 py-2.5 sm:px-8 sm:py-4 text-sm sm:text-lg font-black text-black transition-all hover:scale-105 hover:bg-amber-500 shadow-xl"
                       >
-                        <span className="text-2xl transition-transform group-hover:scale-125">▶</span> 
+                        <span className="text-lg sm:text-2xl transition-transform group-hover:scale-125">▶</span>
                         PLAY NOW
                       </button>
                       <button
                         onClick={() => navigate(`/movie/${heroMovie.slug}`)}
-                        className="flex items-center gap-3 rounded-xl bg-white/10 px-8 py-4 text-lg font-bold text-white backdrop-blur-xl transition-all hover:bg-white/20 border border-white/10"
+                        className="flex items-center gap-2 sm:gap-3 rounded-lg sm:rounded-xl bg-white/10 px-5 py-2.5 sm:px-8 sm:py-4 text-sm sm:text-lg font-bold text-white backdrop-blur-xl transition-all hover:bg-white/20 border border-white/10"
                       >
-                        <AiOutlineInfoCircle size={28} />
-                        MORE INFO
+                        <AiOutlineInfoCircle size={20} />
+                        <span className="hidden xs:inline">MORE INFO</span>
+                        <span className="xs:hidden">INFO</span>
                       </button>
                     </div>
                   </div>
@@ -159,10 +166,11 @@ export default function HomePage() {
               </div>
             );
           })}
+
         </Carousel>
 
         {/* CONTENT ROWS */}
-        <div className="relative z-30 -mt-32 space-y-12 pb-24 px-4 md:px-10">
+        <div className="relative z-30 -mt-10 sm:-mt-20 md:-mt-32 space-y-6 sm:space-y-10 pb-16 px-3 sm:px-4 md:px-10">
           
           {/* Continue Watching */}
           {history.length > 0 && (

@@ -2,7 +2,7 @@ import React from "react";
 
 export default function Hero({ videoUrl, posterUrl, children }) {
   return (
-    <section className="relative h-[95vh] w-full overflow-hidden bg-black">
+    <section className="relative h-[60vh] sm:h-[75vh] md:h-[90vh] w-full overflow-hidden bg-black">
       {/* Background Media */}
       <div className="absolute inset-0">
         {videoUrl ? (
@@ -24,19 +24,19 @@ export default function Hero({ videoUrl, posterUrl, children }) {
         )}
       </div>
 
-      {/* Premium Multi-Layer Overlays */}
-      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/20 to-transparent" />
-      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/30" />
-      <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-black to-transparent" />
+      {/* Multi-Layer Overlays */}
+      <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/40" />
+      <div className="absolute bottom-0 left-0 right-0 h-40 sm:h-64 bg-gradient-to-t from-black to-transparent" />
 
       {/* Content Container */}
-      <div className="relative z-20 mx-auto flex h-full max-w-7xl items-center px-6 pb-20 md:px-10">
-        <div className="animate-in fade-in slide-in-from-left-8 duration-1000">
+      <div className="relative z-20 mx-auto flex h-full max-w-7xl items-end sm:items-center px-4 pb-12 sm:pb-20 md:px-10">
+        <div className="animate-in fade-in slide-in-from-left-8 duration-1000 w-full">
           {children}
         </div>
       </div>
 
-      {/* Decorative Accents */}
+      {/* Decorative Accent */}
       <div className="absolute left-0 top-1/2 h-96 w-1 bg-amber-500 blur-2xl opacity-20" />
     </section>
   );

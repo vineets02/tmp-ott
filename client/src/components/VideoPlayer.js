@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 
@@ -160,7 +160,23 @@ const showRotateHint = (containerEl) => {
 export const VideoPlayer = (props) => {
   const videoRef = useRef(null);
   const playerRef = useRef(null);
+  const [showSkipIntro, setShowSkipIntro] = useState(false);
   const { options, onReady, onProgress } = props;
+
+  // Use refs so the timeupdate closure always reads the latest values
+  // (avoids stale-closure bugs since useEffect runs only once)
+  const introStartRef = useRef(Number(options.introStart) || 0);
+  const introEndRef   = useRef(Number(options.introEnd)   || 0);
+  const hasIntroRef   = useRef(introEndRef.current > introStartRef.current && introEndRef.current > 0);
+
+  // Keep refs in sync if options change after mount
+  useEffect(() => {
+    introStartRef.current = Number(options.introStart) || 0;
+    introEndRef.current   = Number(options.introEnd)   || 0;
+    hasIntroRef.current   = introEndRef.current > introStartRef.current && introEndRef.current > 0;
+    // If we're past the intro window already, hide the button
+    if (!hasIntroRef.current) setShowSkipIntro(false);
+  }, [options.introStart, options.introEnd]);
 
   useEffect(() => {
     if (!playerRef.current) {
@@ -273,10 +289,19 @@ export const VideoPlayer = (props) => {
 
       // ─────────────────────────────────────────────────────────────────────
 
-      // Progress Tracking (Heartbeat)
+      // Progress Tracking (Heartbeat) + Skip Intro Detection
       player.on('timeupdate', () => {
         const currentTime = player.currentTime();
         if (onProgress) onProgress(currentTime);
+
+        // Show/hide Skip Intro button — reads from refs (never stale)
+        if (hasIntroRef.current) {
+          setShowSkipIntro(
+            currentTime >= introStartRef.current && currentTime < introEndRef.current
+          );
+        } else {
+          setShowSkipIntro(false);
+        }
       });
 
       // Quality Selector
@@ -337,11 +362,54 @@ export const VideoPlayer = (props) => {
     <div data-vjs-player className="w-full h-full group relative overflow-hidden rounded-xl">
       <style>{customStyles}</style>
       <div ref={videoRef} />
+
+      {/* Movie title overlay */}
       <div className="absolute top-6 left-6 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
         <h2 className="text-xl font-black text-white drop-shadow-lg uppercase tracking-wider">
           {options.title || "Now Playing"}
         </h2>
       </div>
+
+      {/* ⏩ Skip Intro Button */}
+      <button
+        onClick={() => {
+          if (playerRef.current) {
+            playerRef.current.currentTime(introEndRef.current);
+            setShowSkipIntro(false);
+          }
+        }}
+        style={{
+          position: 'absolute',
+          bottom: '80px',
+          right: '20px',
+          zIndex: 50,
+          opacity: showSkipIntro ? 1 : 0,
+          pointerEvents: showSkipIntro ? 'auto' : 'none',
+          transform: showSkipIntro ? 'translateY(0)' : 'translateY(8px)',
+          transition: 'opacity 0.3s ease, transform 0.3s ease',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: 'rgba(0,0,0,0.85)',
+          border: '2px solid #f59e0b',
+          color: '#f59e0b',
+          fontWeight: '900',
+          fontSize: '13px',
+          letterSpacing: '0.1em',
+          textTransform: 'uppercase',
+          padding: '10px 22px',
+          borderRadius: '6px',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 4px 20px rgba(245,158,11,0.3)',
+          cursor: 'pointer',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="#f59e0b">
+          <path d="M5.59 7.41L10.18 12l-4.59 4.59L7 18l6-6-6-6zM16 6h2v12h-2z"/>
+        </svg>
+        Skip Intro
+      </button>
     </div>
   );
 }

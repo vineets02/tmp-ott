@@ -150,7 +150,7 @@ module.exports.createMovieController = async (req, res) => {
     //   isPremium,
     // } = req.fields
     // const { poster, video, trailer } = req.files
-    const { title, description, director, language, duration, category, contenttype, rating, cast, releaseDate, isPremium, isKids } = req.fields;
+    const { title, description, director, language, duration, category, contenttype, rating, cast, releaseDate, isPremium, isKids, introStart, introEnd } = req.fields;
     const { poster, video, trailer } = req.files;
 
     // Validation
@@ -169,6 +169,8 @@ module.exports.createMovieController = async (req, res) => {
       cast: cast ? cast.split(",").map(c => c.trim()) : [],
       isPremium: isPremium === "true",
       isKids: isKids === "true",
+      introStart: introStart ? Number(introStart) : 0,
+      introEnd: introEnd ? Number(introEnd) : 0,
     })
 
     if (poster) {
@@ -441,6 +443,8 @@ module.exports.updateMovieController = async (req, res) => {
       releaseDate,
       isPremium,
       isKids,
+      introStart,
+      introEnd,
     } = req.fields;
     const { poster, video } = req.files;
 
@@ -465,6 +469,8 @@ module.exports.updateMovieController = async (req, res) => {
         cast: cast ? cast.split(",").map((c) => c.trim()) : [],
         isPremium: isPremium === "true" || isPremium === true,
         isKids: isKids === "true" || isKids === true,
+        introStart: introStart ? Number(introStart) : 0,
+        introEnd: introEnd ? Number(introEnd) : 0,
       },
       { new: true }
     );
