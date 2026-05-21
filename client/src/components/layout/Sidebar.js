@@ -53,8 +53,8 @@ export default function Sidebar({ onCollapse }) {
     // If no permission specified, it's public for all admins
     if (!item.permission) return true;
     
-    // If Super Admin (Legacy role 1 and no dynamic role)
-    if (auth?.user?.role === 1 && !auth?.user?.dynamicRole) return true;
+    // If Super Admin (Legacy role 1)
+    if (auth?.user?.role === 1) return true;
     
     // Check dynamic permissions
     return auth?.user?.dynamicRole?.permissions?.includes(item.permission);

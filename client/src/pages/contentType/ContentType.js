@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Layout from "../../components/layout/Layout";
-import Sidebar from "../../components/layout/Sidebar";
+import AdminLayout from "../../components/layout/AdminLayout";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import config from "../../config";
@@ -70,11 +69,7 @@ export default function ContentType() {
   };
 
   return (
-    <Layout title="Content Types - TMP Admin">
-      <div className="flex min-h-screen bg-zinc-950">
-        <Sidebar />
-        
-        <main className="flex-1 p-6 md:p-10 md:ml-64 pt-24">
+    <AdminLayout title="Content Types - TMP Admin">
           <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
               <h1 className="text-sm font-black uppercase tracking-[0.3em] text-amber-500 mb-2">Structure Management</h1>
@@ -127,8 +122,6 @@ export default function ContentType() {
               </div>
             ))}
           </div>
-        </main>
-      </div>
-    </Layout>
+    </AdminLayout>
   );
 }

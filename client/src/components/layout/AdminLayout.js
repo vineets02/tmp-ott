@@ -19,7 +19,7 @@ export default function AdminLayout({ children, title }) {
         
         <main 
           className={`flex-1 transition-all duration-500 min-h-screen
-            ${isCollapsed ? "md:ml-20" : "md:ml-64"} ml-0 p-4 md:p-10`}
+            ${isCollapsed ? "md:ml-20" : "md:ml-64"} ml-0 p-6 pt-24 md:p-10`}
         >
           <Toaster toastStyle={{ backgroundColor: "#EFA80A" }} />
           {children}

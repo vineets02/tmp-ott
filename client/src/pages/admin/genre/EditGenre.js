@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import Layout from "../../../components/layout/Layout";
-import Sidebar from "../../../components/layout/Sidebar";
+import AdminLayout from "../../../components/layout/AdminLayout";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import axios from "axios";
 import config from "../../../config";
@@ -46,10 +45,7 @@ export default function EditGenre() {
   };
 
   return (
-    <Layout title="Edit Genre - TMP Admin">
-      <div className="flex min-h-screen bg-zinc-950">
-        <Sidebar />
-        <main className="flex-1 p-6 md:p-10 md:ml-64 pt-24">
+    <AdminLayout title="Edit Genre - TMP Admin">
           <button onClick={() => navigate(-1)} className="mb-6 flex items-center gap-2 text-zinc-500 hover:text-white transition-colors font-bold text-sm uppercase tracking-widest"><BiArrowBack /> Back</button>
           
           <div className="max-w-2xl bg-zinc-900 border border-zinc-800 rounded-3xl p-8">
@@ -78,8 +74,6 @@ export default function EditGenre() {
               </button>
             </form>
           </div>
-        </main>
-      </div>
-    </Layout>
+    </AdminLayout>
   );
 }

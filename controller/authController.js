@@ -390,6 +390,34 @@ const addToWatchlistController = async (req, res) => {
   }
 };
 
+const removeFromWatchlistController = async (req, res) => {
+  try {
+    const { movieId } = req.params;
+    const { profileId } = req.body; // or req.query depending on how we send it, usually body for DELETE is tricky, let's allow it in body or query
+    
+    const user = await userModel.findById(req.user._id);
+    
+    // Check if profileId is passed in query or body
+    const pid = profileId || req.query.profileId;
+
+    if (pid) {
+      const profile = user.profiles.id(pid);
+      if (profile) {
+        profile.watchlist = profile.watchlist.filter(id => id.toString() !== movieId);
+        await user.save();
+        return res.status(200).send({ success: true, message: "Removed from profile watchlist" });
+      }
+    }
+
+    user.watchlist = user.watchlist.filter(id => id.toString() !== movieId);
+    await user.save();
+    res.status(200).send({ success: true, message: "Removed from account watchlist" });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ success: false, message: "Error removing from watchlist" });
+  }
+};
+
 const getWatchlistController = async (req, res) => {
   try {
     const { profileId } = req.query;
@@ -557,6 +585,7 @@ module.exports = {
   orderStatusController,
   changePasswordController,
   addToWatchlistController,
+  removeFromWatchlistController,
   getWatchlistController,
   updateHistoryController,
   getHistoryController,

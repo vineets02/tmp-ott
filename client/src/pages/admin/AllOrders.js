@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import Layout from "../../components/layout/Layout";
-import Sidebar from "../../components/layout/Sidebar";
+import AdminLayout from "../../components/layout/AdminLayout";
 import axios from "axios";
 import config from "../../config";
 import moment from "moment";
@@ -52,12 +51,8 @@ export default function AllOrders() {
   };
 
   return (
-    <Layout title="Subscription Management - TMP Admin">
-      <div className="flex min-h-screen bg-zinc-950">
-        <Sidebar />
-        
-        <main className="flex-1 p-6 md:p-10 md:ml-64 pt-24">
-          <div className="mb-10">
+    <AdminLayout title="Subscription Management - TMP Admin">
+      <div className="mb-10">
             <h1 className="text-sm font-black uppercase tracking-[0.3em] text-amber-500 mb-2">Revenue Tracking</h1>
             <h2 className="text-4xl font-black text-white">Subscription Orders</h2>
           </div>
@@ -167,8 +162,6 @@ export default function AllOrders() {
               </div>
             </div>
           </div>
-        </main>
-      </div>
-    </Layout>
+    </AdminLayout>
   );
 }

@@ -55,6 +55,7 @@ router.get("/order-status", requireSignIn, isAdmin, orderStatusController)
 // Watchlist & History
 router.post("/watchlist", requireSignIn, require("../controller/authController.js").addToWatchlistController)
 router.get("/watchlist", requireSignIn, require("../controller/authController.js").getWatchlistController)
+router.delete("/watchlist/:movieId", requireSignIn, require("../controller/authController.js").removeFromWatchlistController)
 router.post("/history", requireSignIn, require("../controller/authController.js").updateHistoryController)
 router.get("/history", requireSignIn, require("../controller/authController.js").getHistoryController)
 

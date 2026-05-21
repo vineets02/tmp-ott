@@ -1,13 +1,13 @@
 import { useSelector, useDispatch } from "react-redux";
 import { Helmet } from "react-helmet-async";
 
-import { addToWatchlist } from "../../../redux/slices/watchSlice";
+import { addToWatchlist, removeFromWatchlist } from "../../../redux/slices/watchSlice";
 import React, { useEffect, useRef, useState } from "react";
 import Layout from "../../../components/layout/Layout";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import VideoPlayer from "../../../components/VideoPlayer";
-import { AiOutlinePlus, AiOutlineShareAlt, AiFillStar, AiFillHeart } from "react-icons/ai";
+import { AiOutlinePlus, AiOutlineShareAlt, AiFillStar, AiFillHeart, AiOutlineCheck } from "react-icons/ai";
 import { FaWhatsapp, FaTelegramPlane } from "react-icons/fa";
 import { BiGroup, BiMessageDetail, BiUserCircle } from "react-icons/bi";
 import NewCard from "../../../components/NewCard";
@@ -117,7 +117,14 @@ function MovieDetails() {
     }
   }, [initialProgress]);
 
+  const isMovieInWatchlist = watchlist?.some((item) => item._id === movieDetails?._id);
+
   const handleProgress = async (currentTime) => {
+    // Auto-remove from watchlist if they have watched at least 5 seconds
+    if (currentTime > 5 && isMovieInWatchlist) {
+      handleRemoveFromWatchlist(true);
+    }
+
     // Throttled sync (every 10 seconds)
     const now = Date.now();
     if (now - lastSyncTime.current < 10000) return;
@@ -161,6 +168,29 @@ function MovieDetails() {
       }
     } catch (error) {
       Swal.fire("Error", "Could not add to watchlist", "error");
+    }
+  };
+
+  const handleRemoveFromWatchlist = async (silent = false) => {
+    if (!auth?.token) return !silent && Swal.fire("Login Required", "Please login to manage your watchlist", "warning");
+    try {
+      const { data } = await axios.delete(
+        `${config.API_BASE_URL}/api/v1/auth/watchlist/${movieDetails._id}?profileId=${auth?.activeProfile?._id || ''}`,
+        { headers: { Authorization: `Bearer ${auth.token}` } }
+      );
+      if (data.success) {
+        dispatch(removeFromWatchlist(movieDetails._id));
+        if (silent !== true) {
+          Swal.fire({
+            icon: "success",
+            title: "Removed from Watchlist",
+            showConfirmButton: false,
+            timer: 1500
+          });
+        }
+      }
+    } catch (error) {
+      if (silent !== true) Swal.fire("Error", "Could not remove from watchlist", "error");
     }
   };
 
@@ -382,8 +412,19 @@ function MovieDetails() {
               </div>
             </div>
 
-            {/* Right: Share + Rent Actions — horizontal on mobile, vertical on desktop */}
+            {/* Right: Actions — horizontal on mobile, vertical on desktop */}
             <div className="w-full lg:w-64 space-y-3">
+              <button
+                onClick={isMovieInWatchlist ? handleRemoveFromWatchlist : handleAddToWatchlist}
+                className={`w-full flex items-center justify-center gap-2 rounded-xl py-3 font-black text-sm transition-all ${
+                  isMovieInWatchlist 
+                    ? "bg-white/10 text-white hover:bg-white/20 border border-white/20" 
+                    : "bg-zinc-800 text-white hover:bg-zinc-700"
+                }`}
+              >
+                {isMovieInWatchlist ? <><AiOutlineCheck size={18} /> IN WATCHLIST</> : <><AiOutlinePlus size={18} /> ADD TO WATCHLIST</>}
+              </button>
+
               <div className="grid grid-cols-3 gap-2">
                 <button
                   onClick={() => handleShare("copy")}

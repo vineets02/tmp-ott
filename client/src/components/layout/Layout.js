@@ -4,6 +4,7 @@ import Footer from "./Footer"
 import { Helmet } from "react-helmet-async"
 import { Toaster } from "react-hot-toast"
 import Sidebar from "./Sidebar"
+import MobileBottomNav from "./MobileBottomNav"
 
 function Layout({ children, title, description, keywords, author }) {
   return (
@@ -17,10 +18,11 @@ function Layout({ children, title, description, keywords, author }) {
         <title>{title || "TMP OTT - Premium Entertainment"}</title>
       </Helmet>
       <Header />
-      <main style={{ minHeight: "20vh" }}>
+      <main className="pb-24 md:pb-0" style={{ minHeight: "20vh" }}>
         <Toaster toastStyle={{ backgroundColor: "#EFA80A" }} />
         {children}
       </main>
+      <MobileBottomNav />
       <Footer />
     </div>
   )
