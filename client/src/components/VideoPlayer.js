@@ -460,31 +460,12 @@ export const VideoPlayer = (props) => {
         <button
           onClick={handleCastClick}
           title={castConnected ? `Casting to ${castDeviceName} — click to stop` : 'Cast to TV'}
-          className={castConnected ? 'cast-connected' : ''}
-          style={{
-            position: 'absolute',
-            top: '16px',
-            right: '16px',
-            zIndex: 50,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: castConnected ? 'rgba(245,158,11,0.15)' : 'rgba(0,0,0,0.7)',
-            border: castConnected ? '2px solid #f59e0b' : '2px solid rgba(255,255,255,0.2)',
-            borderRadius: '8px',
-            padding: '7px 13px',
-            color: castConnected ? '#f59e0b' : '#fff',
-            fontSize: '12px',
-            fontWeight: '800',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            backdropFilter: 'blur(10px)',
-            transition: 'all 0.25s ease',
-            opacity: 0,  // hidden by default, shown on hover via group
-          }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-          onMouseLeave={e => { if (!castConnected) e.currentTarget.style.opacity = '0'; }}
+          className={`absolute top-4 right-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-extrabold tracking-wide uppercase cursor-pointer backdrop-blur-md transition-all duration-300 ${
+            castConnected 
+              ? 'cast-connected bg-amber-500/15 border-2 border-amber-500 text-amber-500 opacity-100' 
+              : 'bg-black/70 border-2 border-white/20 text-white opacity-0 group-hover:opacity-100 hover:border-amber-500 hover:text-amber-500'
+          }`}
+          style={{}}
           ref={el => { if (el && castConnected) el.style.opacity = '1'; }}
         >
           {/* Cast SVG icon */}
