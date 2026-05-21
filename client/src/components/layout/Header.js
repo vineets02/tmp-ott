@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { AiOutlineMenu, AiOutlineClose, AiOutlineSearch } from "react-icons/ai";
+import { AiOutlineMenu, AiOutlineClose, AiOutlineSearch, AiOutlineBell } from "react-icons/ai";
 import { BsFillBagFill } from "react-icons/bs";
 import { useSelector, useDispatch } from "react-redux";
 import { logout as logoutAction } from "../../redux/slices/authSlice";
@@ -46,6 +46,51 @@ export default function Header() {
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
   const [settings, setSettings] = useState({ paywallEnabled: true });
 
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
+
+  useEffect(() => {
+    if (auth?.token) {
+      fetchNotifications();
+    }
+  }, [auth?.token]);
+
+  const fetchNotifications = async () => {
+    try {
+      const { data } = await axios.get(`${config.API_BASE_URL}/api/v1/notifications/user`, {
+        headers: { Authorization: `Bearer ${auth.token}` }
+      });
+      if (data.success) {
+        setNotifications(data.notifications);
+        setUnreadCount(data.unreadCount);
+      }
+    } catch (error) {
+      console.log("Failed to fetch notifications");
+    }
+  };
+
+  const handleMarkAsRead = async (notificationId = null) => {
+    try {
+      await axios.put(`${config.API_BASE_URL}/api/v1/notifications/mark-read`, { notificationId }, {
+        headers: { Authorization: `Bearer ${auth.token}` }
+      });
+      fetchNotifications();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleNotificationClick = (n) => {
+    if (!n.readBy.includes(auth.user._id)) {
+      handleMarkAsRead(n._id);
+    }
+    if (n.link) {
+      navigate(n.link);
+    }
+    setNotificationDropdownOpen(false);
+  };
+
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
@@ -86,14 +131,14 @@ export default function Header() {
         
         {/* Left: Logo & Nav */}
         <div className="flex items-center gap-6 md:gap-12 min-w-0">
-          <Link to="/" className="flex items-center gap-2 group shrink-0">
+          <Link to="/" className="flex items-center gap-1.5 sm:gap-2 group shrink-0">
             <img
               src="/Logo.png"
               alt="TMP"
-              className="h-8 w-8 md:h-10 md:w-10 object-contain transition-transform group-hover:scale-110"
+              className="h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10 object-contain transition-transform group-hover:scale-110"
             />
             <div className="flex flex-col leading-none">
-              <span className="text-sm md:text-xl font-black text-white tracking-tighter">
+              <span className="text-xs sm:text-sm md:text-xl font-black text-white tracking-tighter">
                 TORTOISE <span className="text-amber-500">MOTION</span>
               </span>
               <span className="hidden sm:block text-[8px] md:text-[10px] font-bold text-zinc-500 tracking-[0.3em] uppercase">Pictures</span>
@@ -119,14 +164,14 @@ export default function Header() {
         </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 md:gap-6 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2 md:gap-6 shrink-0">
           
-          {/* Search */}
-          <div className={`relative flex items-center transition-all duration-300 ${isSearchExpanded ? "w-44 sm:w-64" : "w-8 md:w-10"}`}>
+          {/* Desktop Search */}
+          <div className={`hidden md:flex relative items-center transition-all duration-300 ${isSearchExpanded ? "w-64" : "w-10"}`}>
             <input
               type="text"
               placeholder="Search Titles..."
-              className={`w-full bg-zinc-900 border border-zinc-800 rounded-full py-2 pl-8 pr-3 text-xs md:text-sm text-white focus:outline-none focus:border-amber-500 transition-all ${
+              className={`w-full bg-zinc-900 border border-zinc-800 rounded-full py-2 pl-8 pr-3 text-sm text-white focus:outline-none focus:border-amber-500 transition-all ${
                 isSearchExpanded ? "opacity-100" : "opacity-0 pointer-events-none"
               }`}
               value={searchQuery}
@@ -135,11 +180,66 @@ export default function Header() {
             />
             <button 
               onClick={() => setIsSearchExpanded(!isSearchExpanded)}
-              className="absolute left-0 h-8 w-8 md:h-10 md:w-10 flex items-center justify-center text-zinc-400 hover:text-amber-500 transition-colors"
+              className="absolute left-0 h-10 w-10 flex items-center justify-center text-zinc-400 hover:text-amber-500 transition-colors"
             >
               <AiOutlineSearch size={18} />
             </button>
           </div>
+
+          {/* Mobile Search Button */}
+          <button 
+            onClick={() => setIsSearchExpanded(true)}
+            className="md:hidden p-1.5 text-zinc-400 hover:text-amber-500 transition-colors"
+          >
+            <AiOutlineSearch size={18} />
+          </button>
+
+          {/* Notifications */}
+          {auth?.user && (
+            <div className="relative group/notif">
+              <button 
+                onClick={() => setNotificationDropdownOpen(!notificationDropdownOpen)}
+                className="relative p-1.5 sm:p-2 text-zinc-400 hover:text-white transition-colors"
+              >
+                <AiOutlineBell size={20} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-2 h-2.5 w-2.5 bg-red-500 rounded-full border border-black animate-pulse shadow-[0_0_10px_rgba(239,68,68,0.8)]"></span>
+                )}
+              </button>
+
+              <div className={`fixed top-16 left-4 right-4 sm:absolute sm:top-auto sm:left-auto sm:right-0 sm:mt-3 sm:w-80 max-h-[70vh] sm:max-h-[80vh] overflow-y-auto bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl transition-all ${notificationDropdownOpen ? "opacity-100 visible translate-y-0" : "opacity-0 invisible translate-y-2"} z-[150]`}>
+                <div className="sticky top-0 bg-zinc-900/95 backdrop-blur z-10 border-b border-zinc-800 px-4 py-3 flex justify-between items-center">
+                  <h3 className="text-white font-black uppercase tracking-widest text-xs">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <button onClick={() => handleMarkAsRead()} className="text-[10px] text-amber-500 hover:text-amber-400 font-bold uppercase tracking-widest">Mark All Read</button>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center text-zinc-500 text-xs italic font-semibold">No notifications yet</div>
+                  ) : (
+                    notifications.map((n) => {
+                      const isUnread = !n.readBy.includes(auth.user._id);
+                      return (
+                        <button 
+                          key={n._id}
+                          onClick={() => handleNotificationClick(n)}
+                          className={`flex flex-col gap-1 text-left px-4 py-4 border-b border-zinc-800/50 hover:bg-zinc-800 transition-colors ${isUnread ? "bg-amber-500/5" : ""}`}
+                        >
+                          <div className="flex justify-between items-start gap-2">
+                            <span className={`text-sm font-black tracking-tight leading-tight ${isUnread ? "text-amber-500" : "text-zinc-200"}`}>{n.title}</span>
+                            {isUnread && <div className="h-2 w-2 rounded-full bg-amber-500 mt-1 shrink-0"></div>}
+                          </div>
+                          <p className="text-xs text-zinc-400 line-clamp-2 leading-relaxed">{n.message}</p>
+                          <span className="text-[9px] text-zinc-600 font-bold uppercase tracking-widest mt-1">{new Date(n.createdAt).toLocaleDateString()}</span>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Watchlist Count */}
           <Link to="/watchlist" className="relative group text-zinc-400 hover:text-white transition-colors">
@@ -213,6 +313,25 @@ export default function Header() {
           </button>
         </div>
       </div>
+
+      {/* Mobile Search Overlay */}
+      {isSearchExpanded && (
+        <div className="md:hidden absolute inset-0 bg-zinc-950 z-[200] flex items-center px-4 gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+          <AiOutlineSearch size={20} className="text-zinc-400" />
+          <input
+            type="text"
+            autoFocus
+            placeholder="Search movies, shows..."
+            className="flex-1 bg-transparent border-none text-white text-sm focus:outline-none placeholder:text-zinc-600"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearch}
+          />
+          <button onClick={() => setIsSearchExpanded(false)} className="p-2 text-zinc-400 hover:text-white">
+            <AiOutlineClose size={20} />
+          </button>
+        </div>
+      )}
 
 
       {/* Mobile Slide-out Menu */}
