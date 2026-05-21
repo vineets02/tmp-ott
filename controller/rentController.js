@@ -63,6 +63,20 @@ const verifyRentalPayment = async (req, res) => {
       expiresAt,
     });
 
+    // Send push notification
+    try {
+      const movieDetails = await movieModel.findById(movieId).select("title slug");
+      await require("../models/notificationModel").create({
+        user: req.user._id,
+        title: "Rental Activated! 🍿",
+        message: `Your 48-hour rental for "${movieDetails?.title || "a movie"}" is now active.`,
+        type: "rental_alert",
+        link: `/movie/${movieDetails?.slug || ""}`,
+      });
+    } catch (notifErr) {
+      console.log("Failed to send rental notification", notifErr);
+    }
+
     res.json({
       success: true,
       message: "Rental activated! You have 48 hours to watch.",

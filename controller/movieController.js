@@ -9,6 +9,7 @@ const systemSettingsModel = require("../models/systemSettingsModel")
 const rentalModel = require("../models/rentalModel")
 const { getUploadPresignedUrl, getFileUrl } = require("../utils/s3")
 const logAdminAction = require("../utils/auditLogger")
+const notificationModel = require("../models/notificationModel")
 const maxSizeInBytes = 20 * 1024 * 1024 * 1024 // 20 GB
 
 
@@ -25,8 +26,8 @@ const streamVideo = async (req, res, fieldName) => {
     const settings = await systemSettingsModel.findOne();
     const isPaywallGloballyEnabled = settings ? settings.paywallEnabled : true;
 
-    // Only check subscription/rental if movie is premium AND paywall is globally enabled
-    if (movie.isPremium && isPaywallGloballyEnabled) {
+    // Only check subscription/rental if movie is premium AND paywall is globally enabled AND it's not just a trailer
+    if (fieldName !== "trailer" && movie.isPremium && isPaywallGloballyEnabled) {
       const token = req.query.token || req.headers.authorization;
       if (!token) {
         return res.status(403).send({ success: false, message: "Login required to watch this content" });
@@ -228,6 +229,19 @@ module.exports.createMovieController = async (req, res) => {
     
     // Log Action
     await logAdminAction(req.user._id, "CREATE_MOVIE", "Movie", `Created movie: ${title}`, { movieId: products._id }, req);
+
+    // Trigger a Push Notification for all users
+    try {
+      await new notificationModel({
+        user: null, // Global notification
+        title: "New Drop! 🎬",
+        message: `The movie "${title}" has just been added. Watch it now!`,
+        type: "new_drop",
+        link: `/movie/${products.slug}`,
+      }).save();
+    } catch (notifErr) {
+      console.log("Error creating new drop notification:", notifErr);
+    }
 
     res.status(201).send({
       success: true,
