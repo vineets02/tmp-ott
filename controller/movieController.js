@@ -646,14 +646,79 @@ module.exports.movieSubtitlesController = async (req, res) => {
 }
 // module.exports = {
 //   createMovieController,
-//   getMovieController,
-//   getSingleMovieController,
-//   moviePosterController,
-//   movieVideoController,
-//   movieTrailerController,
-//   deleteMovieController,
-//   updateMovieController,
-//   movieSearchController,
-//   relatedMovieController,
+// ...
 // }
 
+module.exports.getForYouController = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.user._id).populate("history.movie");
+    if (!user) {
+      return res.status(404).send({ success: false, message: "User not found" });
+    }
+
+    // Combine history of main user and all profiles
+    let allHistory = [...user.history];
+    if (user.profiles && user.profiles.length > 0) {
+      user.profiles.forEach(p => {
+        allHistory = allHistory.concat(p.history);
+      });
+    }
+
+    // Extract unique category IDs and watched movie IDs
+    const watchedCategoryIds = new Set();
+    const watchedMovieIds = new Set();
+
+    allHistory.forEach(h => {
+      if (h.movie && h.movie._id) {
+        watchedMovieIds.add(h.movie._id.toString());
+        if (h.movie.category) {
+          watchedCategoryIds.add(h.movie.category.toString());
+        }
+      }
+    });
+
+    const categoryArray = Array.from(watchedCategoryIds);
+    const movieArray = Array.from(watchedMovieIds);
+
+    let recommendations = [];
+
+    // Find movies from watched categories that haven't been watched yet
+    if (categoryArray.length > 0) {
+      recommendations = await movieModel.find({
+        category: { $in: categoryArray },
+        _id: { $nin: movieArray }
+      })
+      .populate("category")
+      .sort({ createdAt: -1 })
+      .limit(10);
+    }
+
+    // Fallback if not enough recommendations
+    if (recommendations.length < 5) {
+      const existingIds = recommendations.map(m => m._id.toString());
+      const excludeIds = [...movieArray, ...existingIds];
+      
+      const fallbackMovies = await movieModel.find({
+        _id: { $nin: excludeIds }
+      })
+      .populate("category")
+      .sort({ createdAt: -1 })
+      .limit(10 - recommendations.length);
+
+      recommendations = [...recommendations, ...fallbackMovies];
+    }
+
+    res.status(200).send({
+      success: true,
+      movies: recommendations
+    });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error fetching personalized recommendations",
+      error
+    });
+  }
+};

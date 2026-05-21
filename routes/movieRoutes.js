@@ -19,6 +19,7 @@ const {
   movieCategoryController,
   movieSubtitlesController,
   getUploadUrlController,
+  getForYouController,
 } = require("../controller/movieController.js");
 
 // Put temp uploads on the same drive as final destination
@@ -61,6 +62,7 @@ router.put(
 // Public routes
 router.get("/get-movie", getMovieController);
 router.get("/get-movie/:slug", getSingleMovieController);
+router.get("/for-you", requireSignIn, getForYouController);
 router.get("/movie-photo/:pid", moviePosterController);
 router.get("/movie-video/:pid", movieVideoController);
 router.get("/movie-trailer/:pid", movieTrailerController);

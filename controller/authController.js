@@ -454,6 +454,14 @@ const updateHistoryController = async (req, res) => {
     } else {
       historyTarget.history.push({ movie: movieId, progress });
     }
+
+    // Auto-remove from watchlist if it was there
+    if (historyTarget.watchlist && historyTarget.watchlist.length > 0) {
+      historyTarget.watchlist = historyTarget.watchlist.filter(
+        (id) => id.toString() !== movieId.toString()
+      );
+    }
+
     
     await user.save();
     res.status(200).send({ success: true });

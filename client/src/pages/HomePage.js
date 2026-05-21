@@ -27,6 +27,7 @@ export default function HomePage() {
   const [movies, setMovies] = useState([]);
   const [trending, setTrending] = useState([]);
   const [history, setHistory] = useState([]);
+  const [forYouMovies, setForYouMovies] = useState([]);
   const [categories, setCategories] = useState([]);
   const [featuredMovies, setFeaturedMovies] = useState([]);
   const [pinnedCategories, setPinnedCategories] = useState([]);
@@ -77,6 +78,15 @@ export default function HomePage() {
         );
         if (historyData.success) {
           setHistory(historyData.history.filter(h => h.movie && h.movie.slug).slice(0, 10));
+        }
+
+        // Fetch For You Personalized Recommendations
+        const { data: forYouData } = await axios.get(
+          `${config.API_BASE_URL}/api/v1/movie/for-you`,
+          { headers: { Authorization: `Bearer ${auth.token}` } }
+        );
+        if (forYouData.success) {
+          setForYouMovies(forYouData.movies.filter(m => m && m.slug));
         }
       }
     } catch (e) {
@@ -175,6 +185,11 @@ export default function HomePage() {
           {/* Continue Watching */}
           {history.length > 0 && (
             <Row title="Continue Watching" movies={history.map(h => h.movie)} />
+          )}
+
+          {/* For You Personalized Row */}
+          {forYouMovies.length > 0 && (
+            <Row title="For You ✨" movies={forYouMovies} />
           )}
 
           {/* Trending Now */}
