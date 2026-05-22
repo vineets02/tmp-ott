@@ -344,15 +344,18 @@ function MovieDetails() {
                     introStart: movieDetails.introStart || 0,
                     introEnd: movieDetails.introEnd || 0,
                     sources: [{
-                      src: `${config.API_BASE_URL}/api/v1/movie/movie-video/${movieDetails._id}?token=${auth?.token}`,
+                      src: movieDetails.video?.startsWith("http") 
+                             ? movieDetails.video 
+                             : `${config.API_BASE_URL}/${movieDetails.video}`,
                       type: 'video/mp4'
                     }],
                     tracks: movieDetails.subtitles ? [{
+                      src: movieDetails.subtitles?.startsWith("http") 
+                             ? movieDetails.subtitles 
+                             : `${config.API_BASE_URL}/${movieDetails.subtitles}`,
                       kind: 'captions',
-                      src: `${config.API_BASE_URL}/api/v1/movie/movie-subtitles/${movieDetails._id}`,
                       srclang: 'en',
-                      label: 'English',
-                      default: true
+                      label: 'English'
                     }] : [],
                     playbackRates: [0.5, 1, 1.5, 2],
                     userActions: {

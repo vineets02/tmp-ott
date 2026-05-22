@@ -110,7 +110,7 @@ function Banner() {
                 responsive: true,
                 fluid: true,
                 sources: [{
-                  src: `${config.API_BASE_URL}/api/v1/movie/movie-trailer/${banner._id}`,
+                  src: banner.trailer?.startsWith("http") ? banner.trailer : `${config.API_BASE_URL}/${banner.trailer}`,
                   type: 'video/mp4'
                 }]
               }}

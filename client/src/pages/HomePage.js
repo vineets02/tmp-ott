@@ -120,7 +120,9 @@ export default function HomePage() {
         >
         {displayFeatured.map((heroMovie) => {
             const heroPoster = `${config.API_BASE_URL}/api/v1/movie/movie-poster/${heroMovie._id}`;
-            const heroTrailer = `${config.API_BASE_URL}/api/v1/movie/movie-trailer/${heroMovie._id}`;
+            const heroTrailer = heroMovie.trailer?.startsWith("http")
+              ? heroMovie.trailer
+              : `${config.API_BASE_URL}/${heroMovie.trailer}`;
 
             return (
               <div key={heroMovie._id}>

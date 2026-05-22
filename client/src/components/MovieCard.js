@@ -71,7 +71,7 @@ const MovieCard = ({ movie }) => {
         onMouseLeave={handleMouseLeave}
       >
         <HoverVideoPlayer
-          videoSrc={`https://tmp-h86h.onrender.com/api/v1/movie/movie-trailer/${movie._id}`}
+          videoSrc={movie.trailer?.startsWith("http") ? movie.trailer : `${config.API_BASE_URL}/${movie.trailer}`}
           volume={1}
           controls
           loop
