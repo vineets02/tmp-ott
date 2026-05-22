@@ -110,39 +110,58 @@ const loginController = async (req, res) => {
 
 const forgotPasswordController = async (req, res) => {
   try {
-    const { email, question, newPassword } = req.body
+    const { email, question, newPassword } = req.body;
+
     if (!email) {
-      res.status(400).send({ message: "email is required" })
+      return res.status(400).send({ success: false, message: "Email is required" });
     }
     if (!question) {
-      res.status(400).send({ message: "question is required" })
+      return res.status(400).send({ success: false, message: "Security answer is required" });
     }
     if (!newPassword) {
-      res.status(400).send({ message: "new password is required" })
+      return res.status(400).send({ success: false, message: "New password is required" });
     }
-    //check
-    const user = await userModel.findOne({ email, question })
+    if (newPassword.length < 6) {
+      return res.status(400).send({ success: false, message: "Password must be at least 6 characters" });
+    }
+
+    // Find user by email first
+    const user = await userModel.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
       return res.status(404).send({
         success: false,
-        message: "wrong email and question",
-      })
+        message: "No account found with this email address.",
+      });
     }
-    const hashed = await hashPassword(newPassword)
-    await userModel.findByIdAndUpdate(user._id, { password: hashed })
+
+    // Compare security answer (case-insensitive, trimmed)
+    const storedAnswer = (user.question || "").toLowerCase().trim();
+    const providedAnswer = (question || "").toLowerCase().trim();
+
+    if (storedAnswer !== providedAnswer) {
+      return res.status(401).send({
+        success: false,
+        message: "Security answer does not match our records.",
+      });
+    }
+
+    // Update password
+    const hashed = await hashPassword(newPassword);
+    await userModel.findByIdAndUpdate(user._id, { password: hashed });
+
     res.status(200).send({
       success: true,
-      message: "password updated successfully",
-    })
+      message: "Password updated successfully",
+    });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     res.status(500).send({
       success: false,
-      message: "something went wrong",
+      message: "Something went wrong. Please try again.",
       error,
-    })
+    });
   }
-}
+};
 
 const changePasswordController = async (req, res) => {
   try {

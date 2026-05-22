@@ -45,13 +45,14 @@ function ForgotPassword() {
         });
       }
     } catch (err) {
-      
+      const msg = err?.response?.data?.message || "Something went wrong. Please check your credentials and try again.";
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: "Something went wrong. Please check your credentials.",
+        title: "Reset Failed",
+        text: msg,
         background: "#18181b",
         color: "#fff",
+        confirmButtonColor: "#ef4444",
       });
     } finally {
       setLoading(false);
