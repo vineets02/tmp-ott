@@ -12,6 +12,7 @@ export default function WatchParty({ movieId, movieTitle, player, auth }) {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const chatRef = useRef(null);
+  const isSyncingRef = useRef(false);
 
   useEffect(() => {
     socket.on("receive_message", (data) => {
@@ -19,15 +20,27 @@ export default function WatchParty({ movieId, movieTitle, player, auth }) {
     });
 
     socket.on("on_sync_play", () => {
-      if (player) player.play();
+      if (player) {
+        isSyncingRef.current = true;
+        player.play();
+        setTimeout(() => { isSyncingRef.current = false; }, 600);
+      }
     });
 
     socket.on("on_sync_pause", () => {
-      if (player) player.pause();
+      if (player) {
+        isSyncingRef.current = true;
+        player.pause();
+        setTimeout(() => { isSyncingRef.current = false; }, 600);
+      }
     });
 
     socket.on("on_sync_seek", (data) => {
-      if (player) player.currentTime(data.time);
+      if (player) {
+        isSyncingRef.current = true;
+        player.currentTime(data.time);
+        setTimeout(() => { isSyncingRef.current = false; }, 600);
+      }
     });
 
     return () => {
@@ -42,9 +55,18 @@ export default function WatchParty({ movieId, movieTitle, player, auth }) {
   useEffect(() => {
     if (!player || !inRoom) return;
 
-    const onPlay = () => socket.emit("sync_play", { roomId });
-    const onPause = () => socket.emit("sync_pause", { roomId });
-    const onSeek = () => socket.emit("sync_seek", { roomId, time: player.currentTime() });
+    const onPlay = () => {
+      if (isSyncingRef.current) return;
+      socket.emit("sync_play", { roomId });
+    };
+    const onPause = () => {
+      if (isSyncingRef.current) return;
+      socket.emit("sync_pause", { roomId });
+    };
+    const onSeek = () => {
+      if (isSyncingRef.current) return;
+      socket.emit("sync_seek", { roomId, time: player.currentTime() });
+    };
 
     player.on("play", onPlay);
     player.on("pause", onPause);
