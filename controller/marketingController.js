@@ -100,7 +100,7 @@ const updateMilestoneStatus = async (req, res) => {
   }
 };
 
-// Generate dialogues/quotes templates for movie
+// Generate dialogues/quotes templates for movie using OpenAI GPT
 const suggestDialogue = async (req, res) => {
   try {
     const { movieId } = req.params;
@@ -111,8 +111,8 @@ const suggestDialogue = async (req, res) => {
 
     const genre = movie.category?.name || "Premium Movie";
     
-    // Catchy taglines and dialogue templates
-    const suggestions = [
+    // Catchy static taglines as fallback
+    const fallbackSuggestions = [
       `"Every choice defines your legacy. Witness the ultimate saga."`,
       `"In this game, there are no survivors. Only legends."`,
       `"Some stories are written in history. Ours is written in blood."`,
@@ -122,9 +122,48 @@ const suggestDialogue = async (req, res) => {
       `"From the depth of mysteries comes the year's greatest ${genre}."`
     ];
 
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return res.status(200).json({ success: true, suggestions: fallbackSuggestions, info: "Demo Mode" });
+    }
+
+    const axios = require("axios");
+    const response = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: "You are a professional movie copywriter. Return a JSON array containing 5 extremely punchy, high-impact marketing taglines or quotes suitable for social media promotion. Return ONLY the JSON array without any markdown wrappers."
+          },
+          {
+            role: "user",
+            content: `Movie Title: ${movie.title}\nDirector: ${movie.director}\nGenre: ${genre}\nSynopsis: ${movie.description}`
+          }
+        ],
+        temperature: 0.8
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    let suggestions = [];
+    try {
+      const text = response.data.choices[0].message.content.trim().replace(/```json/g, "").replace(/```/g, "");
+      suggestions = JSON.parse(text);
+    } catch (e) {
+      suggestions = fallbackSuggestions;
+    }
+
     res.status(200).json({ success: true, suggestions });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Error generating quotes", error: error.message });
+    console.error("OpenAI Dialogue suggestions error:", error.message);
+    res.status(200).json({ success: true, suggestions: fallbackSuggestions });
   }
 };
 
@@ -146,9 +185,103 @@ const saveCreativeAsset = async (req, res) => {
   }
 };
 
+// Generate AI Stylized Poster using OpenAI DALL-E 3 & GPT Vision description
+const generateAIPoster = async (req, res) => {
+  try {
+    const { imageBase64, prompt } = req.body;
+    if (!imageBase64 || !prompt) {
+      return res.status(400).json({ success: false, message: "Image and prompt are required" });
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      // Sandbox fallback mode
+      return res.status(200).json({ 
+        success: true, 
+        demo: true,
+        imageUrl: imageBase64, 
+        message: "OPENAI_API_KEY not configured. Running in sandbox simulator mode." 
+      });
+    }
+
+    const axios = require("axios");
+
+    // Phase 1: Describe the uploaded scene photo using GPT-4o-mini (Vision)
+    console.log("Analyzing scene still using GPT Vision...");
+    const visionResponse = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Describe the subjects, layout, characters, and composition of this movie scene in under 50 words to be used for an image generation prompt."
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: imageBase64 // Handles base64 data url directly
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 100
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    const sceneDescription = visionResponse.data?.choices?.[0]?.message?.content || "a movie scene";
+    console.log("Scene description compiled:", sceneDescription);
+
+    // Phase 2: Create matching DALL-E 3 image combining prompt + description
+    console.log("Generating stylized poster using DALL-E 3...");
+    const imageResponse = await axios.post(
+      "https://api.openai.com/v1/images/generations",
+      {
+        model: "dall-e-3",
+        prompt: `A movie promo graphic displaying: ${sceneDescription}. Artistic style: ${prompt}. Cinematic lighting, highly detailed poster, vivid colors, no text or overlays in the image itself.`,
+        n: 1,
+        size: "1024x1024",
+        response_format: "b64_json"
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+    if (imageResponse.data && imageResponse.data.data && imageResponse.data.data.length > 0) {
+      const outputBase64 = `data:image/png;base64,${imageResponse.data.data[0].b64_json}`;
+      return res.status(200).json({ success: true, imageUrl: outputBase64 });
+    } else {
+      return res.status(500).json({ success: false, message: "Invalid response from OpenAI DALL-E" });
+    }
+
+  } catch (error) {
+    console.error("OpenAI Poster Generation error:", error.response?.data || error.message);
+    res.status(500).json({ 
+      success: false, 
+      message: "AI Generation failed", 
+      error: error.response?.data?.error?.message || error.message 
+    });
+  }
+};
+
 module.exports = {
   getMarketingPlan,
   updateMilestoneStatus,
   suggestDialogue,
-  saveCreativeAsset
+  saveCreativeAsset,
+  generateAIPoster
 };

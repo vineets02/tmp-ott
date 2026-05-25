@@ -40,9 +40,51 @@ export default function MarketingPlanner() {
   const [fontSize, setFontSize] = useState(28);
   const [textAlignment, setTextAlignment] = useState("center");
   const [overlayOpacity, setOverlayOpacity] = useState(0.4);
+  const [aiPrompt, setAiPrompt] = useState("retro vintage movie poster, highly detailed cinematic masterpiece");
+  const [aiLoading, setAiLoading] = useState(false);
 
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  const handleAIGenerate = async () => {
+    if (!backgroundImage) {
+      return Swal.fire("Warning", "Please upload or load a movie scene photo first.", "warning");
+    }
+    try {
+      setAiLoading(true);
+      const { data } = await axios.post(`${config.API_BASE_URL}/api/v1/admin/marketing/ai-poster`, {
+        imageBase64: backgroundImage,
+        prompt: aiPrompt
+      }, {
+        headers: { Authorization: `Bearer ${auth.token}` }
+      });
+
+      if (data.success) {
+        setBackgroundImage(data.imageUrl);
+        if (data.demo) {
+          Swal.fire({
+            title: "Sandbox Mode Active",
+            text: "Poster stylized! Configure your Stability AI API key in the server's .env file to enable live SD generation.",
+            icon: "info",
+            background: "#18181b",
+            color: "#fff"
+          });
+        } else {
+          Swal.fire({
+            title: "Success!",
+            text: "Movie frame stylized using Stable Diffusion AI successfully.",
+            icon: "success",
+            background: "#18181b",
+            color: "#fff"
+          });
+        }
+      }
+    } catch (err) {
+      Swal.fire("AI Styling Failed", err.response?.data?.message || err.message, "error");
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   // Fetch all movies
   const fetchMovies = useCallback(async () => {
@@ -424,6 +466,38 @@ export default function MarketingPlanner() {
                 <BiSparkles className="text-amber-500" /> AI Dialogue Studio
               </h3>
               <p className="text-xs text-zinc-500 mt-1">Design catching dialogues overlay over movie stills</p>
+            </div>
+
+            {/* AI Poster Stylization Segment */}
+            <div className="bg-zinc-950/40 border border-zinc-850 p-5 rounded-2xl space-y-4">
+              <div>
+                <label className="text-[10px] font-black text-amber-500 uppercase tracking-widest block mb-2">AI Creative Stylizer Prompt</label>
+                <input 
+                  type="text"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="e.g. cyberpunk neon aesthetic, retro movie poster style, high details..."
+                  className="w-full bg-zinc-850 border-none rounded-xl p-3.5 text-white font-bold text-xs focus:ring-2 focus:ring-amber-500 placeholder-zinc-600"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleAIGenerate}
+                disabled={aiLoading}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black py-3 rounded-xl text-xs font-black uppercase transition-all disabled:opacity-50"
+              >
+                {aiLoading ? (
+                  <>
+                    <BiLoaderAlt className="animate-spin" size={16} />
+                    Stylizing Movie Still...
+                  </>
+                ) : (
+                  <>
+                    <BiSparkles size={16} />
+                    Generate AI Stylized Poster
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Quick Stills Dropdown */}
