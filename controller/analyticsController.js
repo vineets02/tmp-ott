@@ -252,3 +252,134 @@ module.exports.getAnalyticsOverview = async (req, res) => {
     res.status(500).json({ success: false, message: "Analytics aggregation failed", error: error.message });
   }
 };
+
+/**
+ * GET /api/v1/admin/analytics/movie/:movieId
+ * Returns detailed viewer retention, active count, and ledger for a single movie
+ */
+module.exports.getMovieWatchInsights = async (req, res) => {
+  try {
+    const { movieId } = req.params;
+    const movie = await movieModel.findById(movieId);
+    if (!movie) {
+      return res.status(404).json({ success: false, message: "Movie not found" });
+    }
+
+    // Helper: Translate HH:MM:SS or minutes to seconds
+    const parseDurationToSeconds = (durationStr) => {
+      if (!durationStr) return 7200;
+      const parts = durationStr.toString().toLowerCase().replace("min", "").trim().split(":");
+      if (parts.length === 3) {
+        return parseInt(parts[0], 10) * 3600 + parseInt(parts[1], 10) * 60 + parseInt(parts[2], 10);
+      } else if (parts.length === 2) {
+        return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+      }
+      const mins = parseInt(parts[0], 10);
+      if (!isNaN(mins)) return mins * 60;
+      return 7200;
+    };
+
+    const durationInSeconds = parseDurationToSeconds(movie.duration);
+
+    // Fetch all users containing this movie in main history or any profile's history
+    const users = await userModel.find({
+      $or: [
+        { "history.movie": movieId },
+        { "profiles.history.movie": movieId }
+      ]
+    }).select("name email history profiles");
+
+    let totalUniqueViewers = 0;
+    let totalActiveNow = 0;
+    let totalWatchTimeSeconds = 0;
+    const deciles = Array(10).fill(0); // For 10%, 20%, ..., 100% completion
+    const viewerLedger = [];
+
+    const processItem = (user, item, profileName = "Primary Account") => {
+      totalUniqueViewers++;
+      const progress = item.progress || 0;
+      totalWatchTimeSeconds += progress;
+
+      // Active status (updated progress in the last 5 minutes)
+      const lastActive = new Date(item.watchedAt || user.updatedAt || new Date());
+      const isCurrentlyActive = (new Date() - lastActive) < 5 * 60 * 1000;
+      if (isCurrentlyActive) totalActiveNow++;
+
+      const completionPercentage = durationInSeconds > 0 
+        ? Math.min(Math.round((progress / durationInSeconds) * 100), 100)
+        : 0;
+
+      // Update decile milestones reached
+      for (let i = 1; i <= 10; i++) {
+        if (completionPercentage >= i * 10) {
+          deciles[i - 1]++;
+        }
+      }
+
+      let status = "Paused";
+      if (isCurrentlyActive) status = "Watching Now";
+      else if (completionPercentage >= 90) status = "Finished";
+
+      viewerLedger.push({
+        userName: user.name,
+        email: user.email,
+        profileName,
+        progress,
+        completionPercentage,
+        lastWatched: item.watchedAt || user.updatedAt || new Date(),
+        status
+      });
+    };
+
+    users.forEach(user => {
+      // Check main history
+      const mainMatch = user.history.find(h => h.movie && h.movie.toString() === movieId);
+      if (mainMatch) {
+        processItem(user, mainMatch);
+      }
+
+      // Check profiles
+      if (user.profiles && user.profiles.length > 0) {
+        user.profiles.forEach(profile => {
+          if (profile.history) {
+            const profileMatch = profile.history.find(h => h.movie && h.movie.toString() === movieId);
+            if (profileMatch) {
+              processItem(user, profileMatch, profile.name);
+            }
+          }
+        });
+      }
+    });
+
+    const averageProgressPercent = totalUniqueViewers > 0 
+      ? Math.round(viewerLedger.reduce((acc, v) => acc + v.completionPercentage, 0) / totalUniqueViewers)
+      : 0;
+
+    res.status(200).json({
+      success: true,
+      movie: {
+        title: movie.title,
+        duration: movie.duration,
+        durationSeconds: durationInSeconds,
+        poster: movie.poster
+      },
+      stats: {
+        totalUniqueViewers,
+        totalActiveNow,
+        averageProgressPercent,
+        averageWatchTimeSeconds: totalUniqueViewers > 0 ? Math.round(totalWatchTimeSeconds / totalUniqueViewers) : 0,
+        retentionChartData: deciles.map((count, index) => ({
+          milestone: `${(index + 1) * 10}%`,
+          count,
+          percentage: totalUniqueViewers > 0 ? Math.round((count / totalUniqueViewers) * 100) : 0
+        })),
+        viewerLedger: viewerLedger.sort((a, b) => new Date(b.lastWatched) - new Date(a.lastWatched))
+      }
+    });
+
+  } catch (error) {
+    console.error("Movie Watch Insights error:", error);
+    res.status(500).json({ success: false, message: "Error compiling watch insights", error: error.message });
+  }
+};
+
