@@ -13,7 +13,7 @@ import {
   BiDownload, 
   BiRefresh, 
   BiLoaderAlt, 
-  BiSparkles, 
+  BiStar, 
   BiSelectMultiple, 
   BiUpload,
   BiCheckCircle,
@@ -463,7 +463,7 @@ export default function MarketingPlanner() {
           <div className="flex-1 space-y-6">
             <div>
               <h3 className="text-xl font-black text-white tracking-tight uppercase flex items-center gap-2">
-                <BiSparkles className="text-amber-500" /> AI Dialogue Studio
+                <BiStar className="text-amber-500" /> AI Dialogue Studio
               </h3>
               <p className="text-xs text-zinc-500 mt-1">Design catching dialogues overlay over movie stills</p>
             </div>
@@ -493,7 +493,7 @@ export default function MarketingPlanner() {
                   </>
                 ) : (
                   <>
-                    <BiSparkles size={16} />
+                    <BiStar size={16} />
                     Generate AI Stylized Poster
                   </>
                 )}
