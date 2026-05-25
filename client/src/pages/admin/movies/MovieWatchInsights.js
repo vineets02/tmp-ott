@@ -56,7 +56,7 @@ export default function MovieWatchInsights() {
       setLoading(true);
       setError(null);
       const { data: res } = await axios.get(
-        `${config.API_BASE_URL}/api/v1/analytics/movie/${movieId}`,
+        `${config.API_BASE_URL}/api/v1/admin/analytics/movie/${movieId}`,
         { headers: { Authorization: `Bearer ${auth.token}` } }
       );
       if (res.success) {
