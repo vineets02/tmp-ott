@@ -14,7 +14,8 @@ import {
   BiLogOut,
   BiUniversalAccess,
   BiShieldQuarter,
-  BiMenu
+  BiMenu,
+  BiMegaphone
 } from "react-icons/bi";
 import { useDispatch, useSelector } from "react-redux";
 import { logout } from "../../redux/slices/authSlice";
@@ -45,6 +46,7 @@ export default function Sidebar({ onCollapse }) {
     { title: "Users", icon: BiGroup, path: "/dashboard/admin/users", permission: "manage_users" },
     { title: "Homepage", icon: BiHome, path: "/dashboard/admin/homepage", permission: "manage_settings" },
     { title: "Subscription", icon: BiCoinStack, path: "/dashboard/admin/subscription-manager", permission: "manage_finance" },
+    { title: "Marketing Planner", icon: BiMegaphone, path: "/dashboard/admin/marketing", permission: "manage_content" },
     { title: "Staff & Logs", icon: BiShieldQuarter, path: "/dashboard/admin/staff", permission: "manage_users" },
     { title: "Analytics", icon: BiPulse, path: "/dashboard/admin/analytics", permission: "view_finance" },
   ];

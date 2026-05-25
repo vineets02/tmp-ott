@@ -22,6 +22,7 @@ const analyticsRoutes = require("./routes/analyticsRoutes")
 const couponRoutes = require("./routes/couponRoutes")
 const homepageRoutes = require("./routes/homepageRoutes")
 const reviewRoutes = require("./routes/reviewRoutes")
+const marketingRoutes = require("./routes/marketingRoutes")
 const { requireSignIn, isAdmin } = require("./middlewares/authMiddleware");
 const fs = require("fs");
 const path = require("path");
@@ -88,6 +89,7 @@ app.use("/api/v1/coupons", couponRoutes)
 app.use("/api/v1/homepage", homepageRoutes)
 app.use("/api/v1/review", reviewRoutes)
 app.use("/api/v1/notifications", notificationRoutes)
+app.use("/api/v1/admin/marketing", marketingRoutes)
 // app.use("/api/v1/orders", orderRoute)
 // app.use("/api/v1/users", getAllUsersController)
 

@@ -41,6 +41,7 @@ import UserManagement from "./pages/admin/UserManagement"
 import HomepageControl from "./pages/admin/HomepageControl"
 import SubscriptionManager from "./pages/admin/SubscriptionManager"
 import MovieWatchInsights from "./pages/admin/movies/MovieWatchInsights"
+import MarketingPlanner from "./pages/admin/MarketingPlanner"
 
 function App() {
   return (
@@ -96,6 +97,7 @@ function App() {
           <Route path="admin/subscription-manager" element={<SubscriptionManager />} />
           <Route path="admin/genres" element={<Genres />} />
           <Route path="admin/movie-insights/:movieId" element={<MovieWatchInsights />} />
+          <Route path="admin/marketing" element={<MarketingPlanner />} />
         </Route>
 
         <Route path="/signup" element={<Signup />} />
