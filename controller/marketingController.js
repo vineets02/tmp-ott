@@ -250,8 +250,7 @@ const generateAIPoster = async (req, res) => {
         model: "dall-e-3",
         prompt: `A movie promo graphic displaying: ${sceneDescription}. Artistic style: ${prompt}. Cinematic lighting, highly detailed poster, vivid colors, no text or overlays in the image itself.`,
         n: 1,
-        size: "1024x1024",
-        response_format: "b64_json"
+        size: "1024x1024"
       },
       {
         headers: {
@@ -262,7 +261,11 @@ const generateAIPoster = async (req, res) => {
     );
 
     if (imageResponse.data && imageResponse.data.data && imageResponse.data.data.length > 0) {
-      const outputBase64 = `data:image/png;base64,${imageResponse.data.data[0].b64_json}`;
+      const imageUrl = imageResponse.data.data[0].url;
+      // Download the image and convert to Base64 buffer
+      const downloadResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
+      const base64Data = Buffer.from(downloadResponse.data).toString("base64");
+      const outputBase64 = `data:image/png;base64,${base64Data}`;
       return res.status(200).json({ success: true, imageUrl: outputBase64 });
     } else {
       return res.status(500).json({ success: false, message: "Invalid response from OpenAI DALL-E" });
