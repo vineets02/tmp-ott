@@ -242,33 +242,27 @@ const generateAIPoster = async (req, res) => {
     const sceneDescription = visionResponse.data?.choices?.[0]?.message?.content || "a movie scene";
     console.log("Scene description compiled:", sceneDescription);
 
-    // Phase 2: Create matching DALL-E 3 image combining prompt + description
-    console.log("Generating stylized poster using DALL-E 3...");
-    const imageResponse = await axios.post(
-      "https://api.openai.com/v1/images/generations",
+    // Phase 2: Create matching image using Hugging Face Stable Diffusion (Free, bypasses DALL-E subscription limits)
+    console.log("Generating stylized poster using Hugging Face Stable Diffusion...");
+    const hfResponse = await axios.post(
+      "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
       {
-        model: "dall-e-3",
-        prompt: `A movie promo graphic displaying: ${sceneDescription}. Artistic style: ${prompt}. Cinematic lighting, highly detailed poster, vivid colors, no text or overlays in the image itself.`,
-        n: 1,
-        size: "1024x1024"
+        inputs: `A movie promo graphic displaying: ${sceneDescription}. Artistic style: ${prompt}. Cinematic lighting, highly detailed poster, vivid colors, no text or overlays in the image itself.`
       },
       {
+        responseType: "arraybuffer",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json"
         }
       }
     );
 
-    if (imageResponse.data && imageResponse.data.data && imageResponse.data.data.length > 0) {
-      const imageUrl = imageResponse.data.data[0].url;
-      // Download the image and convert to Base64 buffer
-      const downloadResponse = await axios.get(imageUrl, { responseType: "arraybuffer" });
-      const base64Data = Buffer.from(downloadResponse.data).toString("base64");
+    if (hfResponse.data) {
+      const base64Data = Buffer.from(hfResponse.data).toString("base64");
       const outputBase64 = `data:image/png;base64,${base64Data}`;
       return res.status(200).json({ success: true, imageUrl: outputBase64 });
     } else {
-      return res.status(500).json({ success: false, message: "Invalid response from OpenAI DALL-E" });
+      return res.status(500).json({ success: false, message: "Invalid response from Hugging Face Stable Diffusion" });
     }
 
   } catch (error) {
